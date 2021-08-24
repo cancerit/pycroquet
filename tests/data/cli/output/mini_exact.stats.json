@@ -1,0 +1,16 @@
+{
+  "command": "pycroquet single-guide -g 103_Human_v1.1_CRISPR_Library.pycroquet.tsv -q mini.fq -w wibble -s bob --qual_offset 33 -o pycroquet/tests/data/cli/output/mini_exact -x",
+  "low_count_guides_lt_15": 101089,
+  "low_count_guides_lt_30": 101089,
+  "low_count_guides_user": null,
+  "mapped_to_guide_reads": 195,
+  "multimap_reads": 0,
+  "reversed_reads": false,
+  "sample_name": "bob",
+  "total_guides": 101064,
+  "total_reads": 200,
+  "unmapped_reads": 5,
+  "vendor_failed_reads": 0,
+  "version": "0.1.1",
+  "zero_count_guides": 101089
+}
