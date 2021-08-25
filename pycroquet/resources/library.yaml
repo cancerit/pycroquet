@@ -1,0 +1,31 @@
+columns:
+  required:
+    id:
+    sgrna_ids:
+        separator: '|'
+    sgrna_seqs:
+        separator: '|'
+    gene_pair_id:
+  optional:
+    sgrna_symbols:
+        separator: '|'
+    sgrna_chrs:
+        separator: '|'
+    sgrna_starts:
+        separator: '|'
+    sgrna_ends:
+        separator: '|'
+    sgrna_strands:
+        separator: '|'
+    sgrna_confidences:
+        separator: '|'
+    sgrna_off_targets:
+        separator: '|'
+    sgrna_libraries:
+        separator: '|'
+    scaffold:
+    target_type:
+    custom_annotation:
+headers:
+  required: []
+  optional: []

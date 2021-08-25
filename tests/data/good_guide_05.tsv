@@ -1,0 +1,3 @@
+#id	sgrna_ids	sgrna_seqs	gene_pair_id	sgrna_strands	custom_annotation
+0	a	ACGT	A~B	0	comment 1
+1	x	ACGT	X~Y	0	comment 2

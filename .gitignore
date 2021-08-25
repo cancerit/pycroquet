@@ -1,0 +1,15 @@
+**/__pycache__/
+**/*.egg-info/
+**/.eggs/
+**/.mypy_cache
+**/.pytest_cache/
+**/test_results/
+.vscode/
+env/
+venv/
+/build/
+/dist/
+htmlcov/
+.coverage
+junit.xml
+*.code-workspace

@@ -1,0 +1,6 @@
+##library-type: dual
+#id	sgrna_ids	sgrna_seqs	gene_pair_id
+1	a|b	AAAAAAAAAA|GGGGGGGGGG	a~b
+2	a|b	AAAAAAAAAA|ATATATATAT	a~b
+3	a|b	AAAAAAAAAA|ACACACACAC	a~b
+4	c|d	GGGGCCCCCC|TTTTTTAAAA	a~b

@@ -1,0 +1,7 @@
+@CO	Reverse with: samtools fastq -1 R1.fastq -2 R2.fastq
+A:1:B:1:1:1:1	77	*	0	0	*	*	0	0	GGGGCCCCCC	GGGGGGGGGG	CO:Z:r1_uniq,r2_uniq,f/r,gidx-3,3
+A:1:B:1:1:1:1	141	*	0	0	*	*	0	0	TTTTAAAAAA	GGGGGGGGGG	CO:Z:r1_uniq,r2_uniq,f/r,gidx-3,3
+A:1:B:1:1:1:2	77	*	0	0	*	*	0	0	AAAAAAAAAA	GGGGGGGGGG	CO:Z:r1_uniq,r2_uniq,f/f,gidx-0,3
+A:1:B:1:1:1:2	141	*	0	0	*	*	0	0	GGGGGGGGGG	GGGGGGGGGG	CO:Z:r1_uniq,r2_uniq,f/f,gidx-0,3
+A:1:B:1:1:1:3	77	*	0	0	*	*	0	0	AAAAAAAAAA	GGGGGGGGGG	CO:Z:r1_uniq,r2_multi,f/r,gidx-?
+A:1:B:1:1:1:3	141	*	0	0	*	*	0	0	GGGGGGGGGG	GGGGGGGGGG	CO:Z:r1_uniq,r2_multi,f/r,gidx-?
