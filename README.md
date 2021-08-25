@@ -69,6 +69,10 @@ Code in place to support read input from any of the following formats:
 
 All options are not applicable to all subcommands, however the majority are common.
 
+### `guidelib`
+
+Please see the [Guide library format][guide-format] for a description of this file.
+
 ### `queries`
 
 Currently the `dual-guide` mode only supports SAM/BAM/CRAM as input.  Convert fastq to unmapped CRAM with:
@@ -406,4 +410,5 @@ identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 
 <!-- refs -->
 
+[guide-format]: https://github.com/cancerit/pycroquet/wiki/Guide-library-format
 [quay-repo]: https://quay.io/repository/wtsicgp/pycroquet?tab=tags
