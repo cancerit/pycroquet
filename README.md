@@ -57,15 +57,18 @@ Code in place to support read input from any of the following formats:
 ## Subcommands
 
 - single-guide
+  - Short single end read quantification.
 - dual-guide
-- sge
+  - Paired end read quantification.
+- long-read
+  - Long single end read quantification
 - guides-to-fa
 
-### Options
+## Options
 
-Not all options are applicable to all subcommands, however the majority are common.
+All options are not applicable to all subcommands, however the majority are common.
 
-#### `queries`
+### `queries`
 
 Currently the `dual-guide` mode only supports SAM/BAM/CRAM as input.  Convert fastq to unmapped CRAM with:
 
@@ -74,17 +77,31 @@ Currently the `dual-guide` mode only supports SAM/BAM/CRAM as input.  Convert fa
 samtools import  --output-fmt CRAM,no_ref=1 -@ 4 -1 $READ1 -2 $READ2 -o $OUTFILE.cram
 ```
 
-#### `chunks`
+### `chunks`
 
 Chunks should be set to a value that allows all CPUs to be utilized.  The value is multiplied by the number of
 CPUs requested and this give the number of unique read sequences held in memory during the mapping phase.
 
-This has a direct impact on memory. If the value is automatically reduces to allow full use of CPUs when appropriate (it
-is never increased).
+This has a direct impact on memory. The value is automatically reduced when too large to allow full use of requested CPUs.
 
-#### `rules`
+### `rules`
 
-Appropriate rules to apply are dependent on the type of data.  Below are preliminary observations
+For single-guide `--rules MM` (allow 2 mismatches in alignment) is a sensible value.  For other subcommands the decision
+is dependent on the library protocol.
+
+Rules have a direct impact on run time as they increase the time taken to abort an alignment, individual costs are as follows:
+
+- `M` = 1
+- `I` = 2 (single b.p.)
+- `D` = 2 (single b.p.)
+
+Performance is only impacted by the maximum penalty you allow.
+
+Be aware if you with to allow up to `2 mismatch` or `1 mismatch + 1 b.p. insert` you must specify:
+
+```
+pycroquet ... --rules MM --rules MI
+```
 
 ## Output files
 
@@ -94,11 +111,11 @@ For single-guide you have the option to suppress it via the `--no-alignment` (`-
 linked to the pairing code so not possible to disable.
 
 Reads that map uniquely are written with `MAPQ>0` (score calculations have not been refined at this time).  There are some
-differences in how to interpret the data depending on if you are processing single-guide, sge or dual-guide.
+differences in how to interpret the data depending on if you are processing single-guide, dual-guide or long-read.
 
 #### Reads mapping to a `sgrna_id`
 
-To get the reads that map uniquely to a guide element (sgrna_seq) use the `sgrna_id`.  This is primarily of use for `single-guide` and `sge`:
+To get the reads that map uniquely to a guide element (sgrna_seq) use the `sgrna_id`.  This is primarily of use for `single-guide` and `long-read`:
 
 ```bash
 samtools view -F 4 -q 1 result.cram $SGRNA_ID
