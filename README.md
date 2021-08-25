@@ -8,6 +8,7 @@ python Crispr Read to Oligo QUantification Enhancement Tool
 - [General](#general)
 - [Subcommands](#subcommands)
 - [Options](#options)
+  - [`guidelib`](#guidelib)
   - [`queries`](#queries)
   - [`chunks`](#chunks)
   - [`rules`](#rules)
