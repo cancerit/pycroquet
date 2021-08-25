@@ -63,6 +63,7 @@ Code in place to support read input from any of the following formats:
 - long-read
   - Long single end read quantification
 - guides-to-fa
+  - Convert guides to fasta for use with `samtools tview`
 
 ## Options
 
