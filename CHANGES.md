@@ -1,5 +1,10 @@
 # CHANGES
 
+## 1.1.0
+
+- First public release
+- Includes dual-guide and long-read (single-guide, suitable for SGE)
+
 ## 1.0.0
 
 - Exact flag dropped in preference for deducing from lack of rules

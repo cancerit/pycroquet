@@ -338,7 +338,20 @@ There are 4 layers to testing and standards:
 ### Local `venv` testing
 
 ```bash
-/tests/scripts/run_unit_tests.sh
+./tests/scripts/run_unit_tests.sh
+```
+
+Also confirm the distribution can be installed by building and installing it into a different venv:
+
+```bash
+rm -rf dist/
+python3 setup.py sdist
+# new terminal
+python3 -m venv tmp-pycroquet-venv
+source tmp-pycroquet-venv/bin/activate
+pip install ~/pycroquet/dist/pycroquet-*.tar.gz
+deactivate
+rm -rf tmp-pycroquet-venv
 ```
 
 ### Local `pre-commit` hooks
