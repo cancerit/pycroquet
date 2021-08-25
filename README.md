@@ -305,11 +305,12 @@ git clone git@github.com:cancerit/pycroquet.git
 cd pycroquet
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python3 ./setup.py develop  # dynamic build
 
-# see later, assumes global install of pre-commit
-pre-commit install
+# add/activate pre-commit
+pip install pre-commit
+pre-comomit install
 ```
 
 ### Mac
@@ -322,8 +323,12 @@ git clone git@github.com:cancerit/pycroquet.git
 cd pycroquet
 python3.9 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python3 setup.sh develop
+
+# add/activate pre-commit
+pip install pre-commit
+pre-comomit install
 ```
 
 ## Testing
@@ -338,7 +343,20 @@ There are 4 layers to testing and standards:
 ### Local `venv` testing
 
 ```bash
-/tests/scripts/run_unit_tests.sh
+./tests/scripts/run_unit_tests.sh
+```
+
+Also confirm the distribution can be installed by building and installing it into a different venv:
+
+```bash
+rm -rf dist/
+python3 setup.py sdist
+# new terminal
+python3 -m venv tmp-pycroquet-venv
+source tmp-pycroquet-venv/bin/activate
+pip install ~/pycroquet/dist/pycroquet-*.tar.gz
+deactivate
+rm -rf tmp-pycroquet-venv
 ```
 
 ### Local `pre-commit` hooks

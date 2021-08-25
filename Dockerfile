@@ -46,9 +46,8 @@ RUN python3.9 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 COPY pycroquet/ pycroquet/
-COPY README.md .
-COPY setup.py requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY README.md setup.py requirements.txt requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
 COPY tests/ tests/
 COPY .coveragerc .
 RUN python3.9 ./setup.py develop && tests/scripts/run_unit_tests.sh
@@ -57,7 +56,7 @@ RUN python3.9 ./setup.py develop && tests/scripts/run_unit_tests.sh
 RUN mkdir -p /var/www/pycroquet && mv htmlcov /var/www/pycroquet/test-coverage && mv junit.xml /var/www/pycroquet/.
 
 # as we use COPY we can cleanup stuff from the testing layers and actually get a smaller image
-RUN pip uninstall -y pre-commit pytest-cov pytest coverage
+RUN comm -13 <(sort requirements.txt) <(sort requirements-dev.txt) | xargs pip uninstall -y
 
 # deploy properly
 RUN python3.9 ./setup.py install \

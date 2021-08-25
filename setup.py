@@ -41,7 +41,7 @@ config = {
     "version": "1.1.0",
     "license": "AGPL-3.0",
     "python_requires": ">= 3.9",
-    "install_requires": ["click", "click-option-group", "python-magic", "pysam", "pygas"],
+    "install_requires": ["click", "click-option-group", "python-magic", "pysam", "pygas", "PyYAML"],
     "packages": ["pycroquet"],
     "setup_requires": ["click"],
     "test_suite": "tests",
