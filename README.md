@@ -39,7 +39,11 @@ python Crispr Read to Oligo QUantification Enhancement Tool
 
 ## Publications
 
-Please contact Keiran Raine (kr2@sanger.ac.uk) and Victoria Offord (vo1@sanger.ac.uk) to reference this code.
+Please contact the following for appropriate referencing methods:
+
+- Keiran Raine (kr2@sanger.ac.uk)
+- Emre Karakoc (ek11@sanger.ac.uk)
+- Victoria Offord (vo1@sanger.ac.uk)
 
 ## General
 
