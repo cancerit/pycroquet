@@ -401,7 +401,7 @@ Copyright (c) 2021
 
 Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 
-This file is part of pygas.
+This file is part of pycroquet.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as

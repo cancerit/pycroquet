@@ -1,5 +1,9 @@
 # CHANGES
 
+## 1.1.1
+
+Correct license text, referencing child package
+
 ## 1.1.0
 
 - First public release
