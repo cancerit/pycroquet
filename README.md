@@ -305,11 +305,12 @@ git clone git@github.com:cancerit/pycroquet.git
 cd pycroquet
 python3 -m venv venv
 source venv/bin/activate
-pip install Cython
+pip install -r requirements-dev.txt
 python3 ./setup.py develop  # dynamic build
 
-# see later, assumes global install of pre-commit
-pre-commit install
+# add/activate pre-commit
+pip install pre-commit
+pre-comomit install
 ```
 
 ### Mac
@@ -322,8 +323,12 @@ git clone git@github.com:cancerit/pycroquet.git
 cd pycroquet
 python3.9 -m venv venv
 source venv/bin/activate
-pip install Cython
+pip install -r requirements-dev.txt
 python3 setup.sh develop
+
+# add/activate pre-commit
+pip install pre-commit
+pre-comomit install
 ```
 
 ## Testing
