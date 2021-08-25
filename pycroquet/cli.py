@@ -287,9 +287,9 @@ def dual_guide(*args, **kwargs):
     is_flag=True,
 )
 @debug_params
-def sge(*args, **kwargs):
+def long_read(*args, **kwargs):
     """
-    SGE - map read file to library guides and output counts, statistics and alignments files.
+    log-read - map read file to library guides and output counts, statistics and alignments files.
     Different to single-guide due to read filtering and other defaults
     """
     pysge.run(*args, **kwargs)
