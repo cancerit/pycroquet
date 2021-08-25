@@ -23,8 +23,12 @@ python Crispr Read to Oligo QUantification Enhancement Tool
   - [`QinT` - query in target](#qint---query-in-target)
   - [`any`](#any)
 - [Viewing alignments](#viewing-alignments)
+- [Installation](#installation)
+  - [Pypi](#pypi)
+  - [Docker and Singularity](#docker-and-singularity)
 - [Development](#development)
-- [Mac install](#mac-install)
+  - [Linux](#linux)
+  - [Mac](#mac)
 - [Testing](#testing)
   - [Local `venv` testing](#local-venv-testing)
   - [Local `pre-commit` hooks](#local-pre-commit-hooks)
@@ -36,13 +40,6 @@ python Crispr Read to Oligo QUantification Enhancement Tool
 ## Publications
 
 Please contact Keiran Raine (kr2@sanger.ac.uk) and Victoria Offord (vo1@sanger.ac.uk) to reference this code.
-
-## Docker and Singularity
-
-There are pre-built images containing this codebase on [quay.io][quay-repo].  When pulling an image you must specify
-the version there is no `latest`.
-
-The docker images are known to work correctly after import into a singularity image.
 
 ## General
 
@@ -254,9 +251,27 @@ CTAGTTCAGATAAAACAACNNNNNN
 ...................
 ```
 
+## Installation
+
+### Pypi
+
+```
+pip install Cython
+pip install pycroquet
+```
+
+### Docker and Singularity
+
+There are pre-built images containing this codebase on [quay.io][quay-repo].  When pulling an image you must specify
+the version there is no `latest`.
+
+The docker images are known to work correctly after import into a singularity image.
+
 ## Development
 
 Python 3.9 or better required.
+
+### Linux
 
 ```bash
 git clone git@github.com:cancerit/pycroquet.git
@@ -270,7 +285,7 @@ python3 ./setup.py develop  # dynamic build
 pre-commit install
 ```
 
-## Mac install
+### Mac
 
 ```bash
 brew update
