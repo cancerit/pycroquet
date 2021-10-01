@@ -81,7 +81,7 @@ def run(
         unique_only=unique,
     )
 
-    countwriter.query_counts(query_dict, stats, output, unique)
+    countwriter.query_counts(query_dict, stats, output)
 
     if unique is False:
         countwriter.guide_counts_single(library, guide_results, output, stats, low_count)
