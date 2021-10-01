@@ -139,6 +139,7 @@ def process_reads(
     reverse=False,
     exclude_by_len=None,
     boundary_mode=3,
+    unique_only=False,
 ) -> Tuple[Dict[str, int], Dict[str, Tuple[str, List[Backtrack]]], Stats]:
     (unique, stats, query_dict, _) = readparser.parse_reads(
         seqfile,
@@ -148,6 +149,10 @@ def process_reads(
         exclude_qcfail=exclude_qcfail,
         exclude_by_len=exclude_by_len,
     )
+
+    if unique_only is True:
+        return (query_dict, None, None, stats)
+
     aligner = AlignerCpu(
         targets=library.targets,
         rules=rules,
@@ -200,4 +205,4 @@ def process_reads(
     stats.multimap_reads = multimap
     stats.unmapped_reads = unmapped
     stats.total_guides = len(library.guides)
-    return (guide_results, aligned_results, stats)
+    return (query_dict, guide_results, aligned_results, stats)

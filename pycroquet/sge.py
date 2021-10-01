@@ -50,6 +50,7 @@ def run(
     reference,
     excludeqcf,
     boundary_mode,
+    unique,
     chunks,
     no_alignment,
     loglevel,
@@ -63,7 +64,7 @@ def run(
     minscore = min_target_len - 10
 
     reverse = False
-    (guide_results, aligned_results, stats) = main.process_reads(
+    (query_dict, guide_results, aligned_results, stats) = main.process_reads(
         library,
         queries,
         workspace,
@@ -77,23 +78,27 @@ def run(
         reverse=reverse,
         exclude_by_len=min_target_len,
         boundary_mode=boundary_mode,
+        unique_only=unique,
     )
 
-    countwriter.guide_counts_single(library, guide_results, output, stats, low_count)
-    if no_alignment is False:
-        readwriter.reads_to_hts(
-            library,
-            aligned_results,
-            queries,
-            qual_offset,
-            workspace,
-            stats,
-            output,
-            usable_cpu,
-            exclude_qcfail=excludeqcf,
-            reference=reference,
-            reverse=reverse,
-        )
+    countwriter.query_counts(query_dict, stats, output, unique)
+
+    if unique is False:
+        countwriter.guide_counts_single(library, guide_results, output, stats, low_count)
+        if no_alignment is False:
+            readwriter.reads_to_hts(
+                library,
+                aligned_results,
+                queries,
+                qual_offset,
+                workspace,
+                stats,
+                output,
+                usable_cpu,
+                exclude_qcfail=excludeqcf,
+                reference=reference,
+                reverse=reverse,
+            )
 
     # TODO: write everything out and then if mapped count is a very low fraction repeat.  If the revcomp result is a higher
     # fraction then replace data

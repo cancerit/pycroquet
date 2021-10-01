@@ -61,6 +61,7 @@ HELP_LOW_COUNT = (
 )
 HELP_QUAL_OFFSET = "Specify phread offset (for fastq) if detection by readname fails"
 HELP_CPUS = "CPUs to use (0 to detect)"
+HELP_SGE_UNIQUE = "Only generate the unique sequence counts file, then exit"
 HELP_CHUNKS = "Reads per mapping block"
 HELP_MINSCORE = "Minimum score to retain, regardless of rule penalties.  Perfect match has score equal to query length."
 HELP_REFERENCE = "Required for cram"
@@ -130,7 +131,8 @@ def chunk_default(f):
     return wrapper
 
 
-def chunk_sge(f):
+def sge_extra(f):
+    @click.option("--unique", required=False, type=bool, is_flag=True, help=HELP_SGE_UNIQUE)
     @click.option(
         "--chunks", required=False, type=int, default=main.READ_CHUNK_SGE_INT, show_default=True, help=HELP_CHUNKS
     )
@@ -275,7 +277,7 @@ def dual_guide(*args, **kwargs):
 
 @cli.command()
 @common_params
-@chunk_sge
+@sge_extra
 @click.option(
     "-n",
     "--no-alignment",

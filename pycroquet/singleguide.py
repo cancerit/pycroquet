@@ -60,7 +60,7 @@ def run(
 
     library = libparser.load(guidelib)
     reverse = False
-    (guide_results, aligned_results, stats) = main.process_reads(
+    (_, guide_results, aligned_results, stats) = main.process_reads(
         library,
         queries,
         workspace,
