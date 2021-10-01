@@ -27,6 +27,7 @@
 # statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
+import gzip
 import json
 import logging
 import os
@@ -108,9 +109,9 @@ def query_counts(
     stats: Stats,
     output: str,
 ):
-    count_output = f"{output}.query_counts.tsv"
+    count_output = f"{output}.query_counts.tsv.gz"
     logging.info(f"Writing query counts file: {count_output}")
-    with open(count_output, "wt") as cout:
+    with gzip.open(count_output, "wt") as cout:
         print("##Command: " + stats.command, file=cout)
         print("##Version: " + stats.version, file=cout)
         print("#QUERY\tCOUNT", file=cout)
