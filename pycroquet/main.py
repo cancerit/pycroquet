@@ -148,7 +148,6 @@ def process_reads(
         exclude_qcfail=exclude_qcfail,
         exclude_by_len=exclude_by_len,
     )
-
     aligner = AlignerCpu(
         targets=library.targets,
         rules=rules,
