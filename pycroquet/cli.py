@@ -61,7 +61,7 @@ HELP_LOW_COUNT = (
 )
 HELP_QUAL_OFFSET = "Specify phread offset (for fastq) if detection by readname fails"
 HELP_CPUS = "CPUs to use (0 to detect)"
-HELP_SGE_UNIQUE = "Only generate the unique sequence counts file, then exit"
+HELP_SGE_UNIQUE = "Only generate the unique sequence counts file, then exit (--guide can be omitted)"
 HELP_CHUNKS = "Reads per mapping block"
 HELP_MINSCORE = "Minimum score to retain, regardless of rule penalties.  Perfect match has score equal to query length."
 HELP_REFERENCE = "Required for cram"
@@ -132,9 +132,19 @@ def chunk_default(f):
 
 
 def sge_extra(f):
-    @click.option("--unique", required=False, type=bool, is_flag=True, help=HELP_SGE_UNIQUE)
+    @click.option("--unique", "unique_only", required=False, type=bool, is_flag=True, help=HELP_SGE_UNIQUE)
     @click.option(
         "--chunks", required=False, type=int, default=main.READ_CHUNK_SGE_INT, show_default=True, help=HELP_CHUNKS
+    )
+    @click.option(
+        "-n",
+        "--no-alignment",
+        required=False,
+        default=False,
+        type=bool,
+        help=HELP_NO_ALIGNMENT,
+        show_default=True,
+        is_flag=True,
     )
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -144,7 +154,7 @@ def sge_extra(f):
 
 
 def common_params(f):
-    @click.option("-g", "--guidelib", required=True, type=_file_exists(), help=HELP_GUIDELIB)
+    @click.option("-g", "--guidelib", required=False, default=None, type=_file_exists(), help=HELP_GUIDELIB)
     @click.option("-q", "--queries", required=True, type=_file_exists(), help=HELP_QUERIES)
     @click.option("-s", "--sample", required=False, type=str, help=HELP_SAMPLE)
     @click.option(
@@ -278,16 +288,6 @@ def dual_guide(*args, **kwargs):
 @cli.command()
 @common_params
 @sge_extra
-@click.option(
-    "-n",
-    "--no-alignment",
-    required=False,
-    default=False,
-    type=bool,
-    help=HELP_NO_ALIGNMENT,
-    show_default=True,
-    is_flag=True,
-)
 @debug_params
 def long_read(*args, **kwargs):
     """
