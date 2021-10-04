@@ -200,4 +200,4 @@ def process_reads(
     stats.multimap_reads = multimap
     stats.unmapped_reads = unmapped
     stats.total_guides = len(library.guides)
-    return (guide_results, aligned_results, stats)
+    return (query_dict, guide_results, aligned_results, stats)
