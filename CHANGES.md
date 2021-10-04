@@ -1,5 +1,10 @@
 # CHANGES
 
+## 1.2.0
+
+Add `--unique` option to `long-read` mode.  Exits as soon as unique read sequence counts are generated.
+Data is added to outputs when run without this flag.
+
 ## 1.1.1
 
 Correct license text, referencing child package
