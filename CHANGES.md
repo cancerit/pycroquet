@@ -1,5 +1,9 @@
 # CHANGES
 
+## 1.2.1
+
+Handle change to how bgzip data is reported by magic decode.
+
 ## 1.2.0
 
 Add `--unique` option to `long-read` mode.  Exits as soon as unique read sequence counts are generated.
