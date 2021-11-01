@@ -81,7 +81,10 @@ def parse_fq_header(header: str):
 
 
 def is_gzip(seq_file):
-    return bool("gzip compressed data" in magic.from_file(seq_file))
+    magic_types = magic.from_file(seq_file)
+    if "gzip compressed data" in magic_types or "gzip compatible" in magic_types:
+        return True
+    return False
 
 
 def parse_reads(
