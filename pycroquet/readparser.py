@@ -318,6 +318,8 @@ def collate(seq_file, workspace, cpus):
         return seq_file
     tmp_hts = os.path.join(workspace, "collated.reads.bam")
     logging.info(f"Collating pairs from {seq_file} to {tmp_hts}")
-    pysam.collate("-f", "-l", "1", "--no-PG", "-@", str(hts_cpus), "-o", tmp_hts, seq_file)
+    collate_opts = ["-f", "-l", "1", "--no-PG", "-@", str(hts_cpus), "-o", tmp_hts, seq_file]
+    logging.debug("samtools collate " + " ".join(collate_opts))
+    pysam.collate(*collate_opts)
     logging.info(f"Collation of reads took: {int(time() - start)}s")
     return tmp_hts

@@ -71,6 +71,7 @@ def parse_header(ifh: TextIO, line: str) -> LibraryHeader:
 
     info_items = {}
     lib_type = None
+    reverse_read_order = False
     while line and line.startswith("##"):
         # these are the info lines
         line = line.rstrip()
@@ -80,6 +81,8 @@ def parse_header(ifh: TextIO, line: str) -> LibraryHeader:
         (tag, value) = m_res.group(1, 2)
         if tag in info_items:
             raise ValueError(f"Duplicate key '{tag}' found for '##' header line")
+        if tag == "dual-orientation" and value == "R2_R1":
+            reverse_read_order = True
         if tag == "library-type":
             if value not in LIBRARY_TYPES:
                 raise ValueError(f"Value for 'library-type' ({value}) is not valid, choose from: " + str(LIBRARY_TYPES))
@@ -96,6 +99,7 @@ def parse_header(ifh: TextIO, line: str) -> LibraryHeader:
         required_cols=config["columns"]["required"],
         config=config,
         column_separators=col_sep,
+        reverse_read_order=reverse_read_order,
     )
 
 
@@ -219,6 +223,8 @@ def parse_data_rows(lh: LibraryHeader, ifh: TextIO) -> List[Guide]:
                     f"All columns that can be split should have the same number of elements.  Column {col} ({split_len}), differs from {initial_col} ({expect_len})"
                 )
 
+        if lh.reverse_read_order:
+            guide.sgrna_seqs = list(reversed(guide.sgrna_seqs))
         for seq in guide.sgrna_seqs:
             if ACGT_ONLY.fullmatch(seq) is None:
                 print(guide)

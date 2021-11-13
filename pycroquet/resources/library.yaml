@@ -28,4 +28,4 @@ columns:
     custom_annotation:
 headers:
   required: []
-  optional: []
+  optional: [dual-orientation]
