@@ -33,7 +33,6 @@ import hashlib
 import logging
 import os
 from array import array
-from tempfile import TemporaryDirectory
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -43,7 +42,6 @@ import pysam
 from pygas.classes import Backtrack
 from pygas.matrix import revcomp
 
-from pycroquet.classes import Guide
 from pycroquet.classes import Library
 from pycroquet.classes import Seqread
 from pycroquet.classes import Stats

@@ -31,7 +31,6 @@ import json
 import logging
 import os
 import shutil
-import sys
 from time import time
 from typing import Dict
 from typing import Final
