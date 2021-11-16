@@ -27,12 +27,12 @@
 # statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
+import copy
 import gzip
 import hashlib
 import logging
 import os
 from array import array
-from tempfile import TemporaryDirectory
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -42,7 +42,6 @@ import pysam
 from pygas.classes import Backtrack
 from pygas.matrix import revcomp
 
-from pycroquet.classes import Guide
 from pycroquet.classes import Library
 from pycroquet.classes import Seqread
 from pycroquet.classes import Stats
@@ -273,15 +272,16 @@ def sm_from_guide_hit(library: Library, hit: Backtrack, strand: str, mapq: int =
     return sa_set
 
 
-def to_mapped_read(
+def to_mapped_reads(
     seqread,
     ref_ids,
     library: Library,
     hits: List[Backtrack],
     reverse_in=None,
     strand_in=None,
-    guide_idx=-1,
-) -> Tuple[pysam.AlignedSegment, bool]:
+    guide_idx=None,
+    dual=False,
+) -> Tuple[List[pysam.AlignedSegment], bool]:
     mapq = 60
     if len(hits) > 1:
         mapq = 0
@@ -292,35 +292,45 @@ def to_mapped_read(
         if strand_in is None:
             strand = "-" if hit.sm.reversed else "+"
         this_sa_set = sm_from_guide_hit(library, hit, strand, mapq)
-        sa_set = sa_set | this_sa_set
+        sa_set = sa_set | this_sa_set  # merge 2 dicts requires >=3.9
     is_secondary = False
+    alignments = []
+    sa_set_len = len(sa_set)
     for hit in hits:
         ref_names = library.sgrna_ids_by_seq(hit.sm.target)
         tags = [("NM", hit.nm), ("MD", hit.md), ("AS", hit.sm.score)]
-        if guide_idx >= 0 and is_secondary is False:
+        if guide_idx is not None and is_secondary is False:
             # only apply to the primary mapping
-            tags.append(("YG", library.guides[guide_idx].id))
+            tags.append(("YG", ";".join([library.guides[i].id for i in guide_idx])))
         for ref_name in ref_names:
-            if len(sa_set) > 1:
-                tags.append(
-                    (
-                        "SA",
-                        ";".join([v for k, v in sa_set.items() if k != ref_name]),
+            local_tags = copy.copy(tags)
+            if sa_set_len > 1:
+                local_tags.append(("NH", sa_set_len))
+                if sa_set_len <= 10:
+                    local_tags.append(
+                        (
+                            "SA",
+                            ";".join([v for k, v in sa_set.items() if k != ref_name]),
+                        )
                     )
-                )
-                tags.append(("NH", len(sa_set)))
+
             if reverse_in is None:
                 reverse = hit.sm.reversed
 
-            a = to_alignment(seqread, reverse, tags)
+            a = to_alignment(seqread, reverse, local_tags)
             # complete mapped info
             a.is_secondary = is_secondary
             a.reference_id = ref_ids[ref_name]
             a.reference_start = hit.t_pos - 1  # zero based
             a.cigarstring = hit.cigar
             a.mapping_quality = mapq
+            alignments.append(a)
+            if dual:
+                break
             is_secondary = True
-    return (a, len(sa_set) > 1)
+        if dual:
+            break
+    return (alignments, sa_set_len > 1)
 
 
 def write_alignments(
@@ -374,10 +384,12 @@ def write_alignments(
 
             a = None
             if hit_type in ("unique", "multimap"):
-                (a, _) = to_mapped_read(seqread, ref_ids, library, hits, reverse, strand_in=strand)
+                (a_lst, _) = to_mapped_reads(seqread, ref_ids, library, hits, reverse, strand_in=strand)
+                for a in a_lst:
+                    af.write(a)
             elif hit_type == "unmapped":
                 a = to_alignment(seqread, reverse, [], unmapped=True)
-            af.write(a)
+                af.write(a)
 
 
 def reads_to_hts(

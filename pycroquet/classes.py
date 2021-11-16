@@ -83,6 +83,7 @@ class LibraryHeader:
     config: dict
     info_items: dict = None
     is_single: bool = False
+    reverse_read_order: bool = False
 
 
 @dataclass
@@ -96,6 +97,12 @@ class Guide:
     other: dict[str, str] = field(default_factory=dict)
     unique: bool = True
     count: int = 0
+    _composite_sgrna_seq = None
+
+    def composite_sgrna_seq(self) -> str:
+        if self._composite_sgrna_seq is None:
+            self._composite_sgrna_seq = "|".join(self.sgrna_seqs)
+        return self._composite_sgrna_seq
 
 
 @dataclass
@@ -137,12 +144,15 @@ class Library:
             self._sgrna_ids_by_seq = sgrna_ids_by_seq
         return self._sgrna_ids_by_seq[target_seq]
 
-    def guide_by_sgrna_set(self, seq_l, seq_r):
+    def guide_by_sgrna_set(self, seq_l, seq_r) -> List[int]:
         match = f"{seq_l}|{seq_r}"
         if self._guide_by_sgrna_set is None:
             data = {}
             for i, g in enumerate(self.guides):
-                data["|".join(g.sgrna_seqs)] = i
+                composite_guide = g.composite_sgrna_seq()
+                if composite_guide not in data:
+                    data[composite_guide] = []
+                data[composite_guide].append(i)
             self._guide_by_sgrna_set = data
         return self._guide_by_sgrna_set.get(match)
 
