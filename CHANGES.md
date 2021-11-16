@@ -1,5 +1,10 @@
 # CHANGES
 
+## 1.3.0
+
+- dual-guide: added library header item to deal with reversed read order when comparing against sgRNA.
+- dual-guide: handled data multiplication issue in CRAM outputs, quicker.
+
 ## 1.2.1
 
 Handle change to how bgzip data is reported by magic decode.
