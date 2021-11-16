@@ -35,10 +35,12 @@ from time import time
 from typing import Dict
 from typing import Final
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 import pysam
 from pygas.alignercpu import AlignerCpu
+from pygas.classes import AlignmentBatch
 from pygas.classes import Backtrack
 
 import pycroquet.tools as ctools
@@ -54,9 +56,61 @@ from pycroquet.main import sg_select_alignment
 from pycroquet.readwriter import guide_header
 from pycroquet.readwriter import read_iter
 from pycroquet.readwriter import to_alignment
-from pycroquet.readwriter import to_mapped_read
+from pycroquet.readwriter import to_mapped_reads
 
 CLASSIFICATION: Final = Classification()
+
+
+def best_unique_l_mm_r(
+    library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]
+) -> Tuple[int, Backtrack, Backtrack]:
+    """
+    find the pairing that is most likely to be the real item
+    """
+    guides_f_r = {}
+    bt_l = bt_set_l[0]
+    guide_idxs_l = set(library.target_to_guides[bt_l.sm.target])
+    gidx = None
+    for bt_r in bt_set_r:
+        guide_idxs_r = set(library.target_to_guides[bt_r.sm.target])
+        guide_intersect = guide_idxs_l.intersection(guide_idxs_r)
+        if guide_intersect:
+            if len(guide_intersect) > 1:
+                raise ValueError("Multiple guides via intersect has never been seen, extra logic may be required")
+            if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
+                gidx = guide_intersect.pop()
+                guides_f_r[gidx] = (gidx, bt_l, bt_r)
+    if guides_f_r:
+        if len(guides_f_r) > 1:
+            raise ValueError("Multiple guides has never been seen, extra logic may be required")
+        return guides_f_r[gidx]
+    return None
+
+
+def best_mm_l_unique_r(
+    library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]
+) -> Tuple[int, Backtrack, Backtrack]:
+    """
+    find the pairing that is most likely to be the real item
+    """
+    guides_f_r = {}
+    bt_r = bt_set_r[0]
+    guide_idxs_r = set(library.target_to_guides[bt_r.sm.target])
+    gidx = None
+    for bt_l in bt_set_l:
+        guide_idxs_l = set(library.target_to_guides[bt_l.sm.target])
+        guide_intersect = guide_idxs_r.intersection(guide_idxs_l)
+        if guide_intersect:
+            if len(guide_intersect) > 1:
+                raise ValueError("Multiple guides via intersect has never been seen, extra logic may be required")
+            if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
+                gidx = guide_intersect.pop()
+                guides_f_r[gidx] = (gidx, bt_l, bt_r)
+    if guides_f_r:
+        if len(guides_f_r) > 1:
+            raise ValueError("Multiple guides has never been seen, extra logic may be required")
+        return guides_f_r[gidx]
+    return None
 
 
 def best_multimatch_set(library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]):
@@ -92,106 +146,96 @@ def classify_read_pair(
     map_l: Tuple[str, List[Backtrack]],
     map_r: Tuple[str, List[Backtrack]],
     library: Library,
-) -> Tuple[str, int, Backtrack, Backtrack, str, str]:  #  noqa R701
+) -> Tuple[str, Optional[List[int]], Backtrack, Backtrack, str, str]:  #  noqa R701
     """
     Returns:
         classification string (see classes.Classification)
+        None|list of gidx
         R1 backtrack
         R2 backtrack
-        R1 guide index
-        R2 guide index
+        R1 map type
+        R2 map type
     """
     (mtype_l, mdata_l) = map_l
     (mtype_r, mdata_r) = map_r
     if mtype_l == "unique" and mtype_l == mtype_r:
         (bt_l, bt_r) = (mdata_l[0], mdata_r[0])
-        (tseq_l, tseq_r) = (bt_l.sm.target, bt_r.sm.target)
-        gidx = library.guide_by_sgrna_set(tseq_l, tseq_r)
-        if gidx is not None and bt_l.sm.reversed is False and bt_r.sm.reversed is True:
-            return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
-
-        # gives the common guides
-        guide_intersect = intersect_guide_targets(library, tseq_l, tseq_r)
-        # but now need to know if any give the appropriate orientations
-        g_size = len(guide_intersect)
-        if g_size == 0:
-            return (CLASSIFICATION.swap, -1, bt_l, bt_r, mtype_l, mtype_r)
-        if g_size == 1:
-            gidx = guide_intersect.pop()
+        gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
+        if gidx is not None:
             if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
                 return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
-            else:
-                return (CLASSIFICATION.aberrant_match, -1, bt_l, bt_l, mtype_l, mtype_r)
-        # g_size > 1
-        if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
-            for gidx in guide_intersect:
-                guide = library.guides[gidx]
-                if guide.sgrna_seqs[0] == tseq_l and guide.sgrna_seqs[1] == tseq_r:
-                    return (
-                        CLASSIFICATION.match,
-                        gidx,
-                        bt_l,
-                        bt_r,
-                        mtype_l,
-                        mtype_r,
-                    )
-        return (CLASSIFICATION.aberrant_match, -1, bt_l, bt_l, mtype_l, mtype_r)
-
-    if mtype_l == "unique":
-        if mtype_r == "unmapped":
-            bt_l = mdata_l[0]
-            if bt_l.sm.reversed:
-                return (CLASSIFICATION.r_open_3p, -1, bt_l, None, mtype_l, mtype_r)
-            else:
-                return (CLASSIFICATION.f_open_3p, -1, bt_l, None, mtype_l, mtype_r)
-        # then multimap
+            # other orientations will be an abberant match as we are in unique/unique
+            return (CLASSIFICATION.aberrant_match, None, bt_l, bt_r, mtype_l, mtype_r)
+        # what about r1/r2 order swap
+        gidx = library.guide_by_sgrna_set(bt_r.sm.target, bt_l.sm.target)
+        if gidx is not None:
+            return (CLASSIFICATION.aberrant_match, None, bt_l, bt_r, mtype_l, mtype_r)
+        # which leaves swap (as both are unique but to different guide sets)
+        return (CLASSIFICATION.swap, None, bt_l, bt_r, mtype_l, mtype_r)
+    elif mtype_l == "unmapped" and mtype_l == mtype_r:
+        return (CLASSIFICATION.no_match, None, None, None, mtype_l, mtype_r)
+    elif mtype_l == "multimap" and mtype_l == mtype_r:
         best_pair = best_multimatch_set(library, mdata_l, mdata_r)
         if best_pair:
-            (
-                gidx,
-                bt_l,
-                bt_r,
-            ) = best_pair  # this will impact how we write out alignments
-            return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
+            # this will impact how we write out alignments
+            (gidx, bt_l, bt_r) = best_pair
+            gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
+            if gidx is not None:
+                if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
+                    return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
+                # other orientations will be an abberant match as we are in unique/unique
+                return (CLASSIFICATION.aberrant_match, None, bt_l, bt_r, mtype_l, mtype_r)
+            # what about r1/r2 order swap
+            gidx = library.guide_by_sgrna_set(bt_r.sm.target, bt_l.sm.target)
+            if gidx is not None:
+                return (CLASSIFICATION.aberrant_match, None, bt_l, bt_r, mtype_l, mtype_r)
+        # which leaves ambiguous (as both map to "things")
+        return (CLASSIFICATION.ambiguous, None, None, None, mtype_l, mtype_r)
+    elif mtype_l == "unique":
         bt_l = mdata_l[0]
-        if bt_l.sm.reversed:
-            return (CLASSIFICATION.r_multi_3p, -1, bt_l, None, mtype_l, mtype_r)
-        else:
-            return (CLASSIFICATION.f_multi_3p, -1, bt_l, None, mtype_l, mtype_r)
-    if mtype_r == "unique":
-        if mtype_l == "unmapped":
-            bt_r = mdata_r[0]
-            if bt_r.sm.reversed:
-                return (CLASSIFICATION.r_open_5p, -1, None, bt_r, mtype_l, mtype_r)
+        if mtype_r == "unmapped":
+            if bt_l.sm.reversed:
+                return (CLASSIFICATION.r_open_3p, None, bt_l, None, mtype_l, mtype_r)
             else:
-                return (CLASSIFICATION.f_open_5p, -1, None, bt_r, mtype_l, mtype_r)
-        # then multi
-        best_pair = best_multimatch_set(library, mdata_l, mdata_r)
+                return (CLASSIFICATION.f_open_3p, None, bt_l, None, mtype_l, mtype_r)
+        # then one end multimap
+        best_pair = best_unique_l_mm_r(library, mdata_l, mdata_r)
+        # above function checks orientation, if not as expected this goes to *_multi_3p
         if best_pair:
-            (
-                gidx,
-                bt_l,
-                bt_r,
-            ) = best_pair  # this will impact how we write out alignments
-            return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
+            (gidx, bt_l, bt_r) = best_pair
+            gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
+            if gidx:
+                return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
+            # what about r1/r2 order swap
+            gidx = library.guide_by_sgrna_set(bt_r.sm.target, bt_l.sm.target)
+            if gidx:
+                return (CLASSIFICATION.aberrant_match, gidx, bt_l, bt_r, mtype_l, mtype_r)
+        if bt_l.sm.reversed:
+            return (CLASSIFICATION.r_multi_3p, None, bt_l, None, mtype_l, mtype_r)
+        return (CLASSIFICATION.f_multi_3p, None, bt_l, None, mtype_l, mtype_r)
+    elif mtype_r == "unique":
         bt_r = mdata_r[0]
-        if bt_r.sm.reversed:
-            return (CLASSIFICATION.r_multi_5p, -1, None, bt_r, mtype_l, mtype_r)
-        else:
-            return (CLASSIFICATION.f_multi_5p, -1, None, bt_r, mtype_l, mtype_r)
-    if mtype_l == "multimap" and mtype_l == mtype_r:
-        best_pair = best_multimatch_set(library, mdata_l, mdata_r)
+        if mtype_l == "unmapped":
+            if bt_r.sm.reversed:
+                return (CLASSIFICATION.r_open_5p, None, None, bt_r, mtype_l, mtype_r)
+            else:
+                return (CLASSIFICATION.f_open_5p, None, None, bt_r, mtype_l, mtype_r)
+        # then one end multimap
+        best_pair = best_mm_l_unique_r(library, mdata_l, mdata_r)
+        # above function checks orientation, if not as expected this goes to *_multi_5p
         if best_pair:
-            (
-                gidx,
-                bt_l,
-                bt_r,
-            ) = best_pair  # this will impact how we write out alignments
-            return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
-        return (CLASSIFICATION.no_match, -1, None, None, mtype_l, mtype_r)
-
-    # all that remains are the combination of unmapped/multimap on both ends
-    return (CLASSIFICATION.no_match, -1, None, None, mtype_l, mtype_r)
+            (gidx, bt_l, bt_r) = best_pair
+            gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
+            if gidx:
+                return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
+            # what about r1/r2 order swap
+            gidx = library.guide_by_sgrna_set(bt_r.sm.target, bt_l.sm.target)
+            if gidx:
+                return (CLASSIFICATION.aberrant_match, gidx, bt_l, bt_r, mtype_l, mtype_r)
+        if bt_r.sm.reversed:
+            return (CLASSIFICATION.r_multi_5p, None, None, bt_r, mtype_l, mtype_r)
+        return (CLASSIFICATION.f_multi_5p, None, None, bt_r, mtype_l, mtype_r)
+    return (CLASSIFICATION.no_match, None, None, None, mtype_l, mtype_r)
 
 
 def order_hits(hits: List[Backtrack], first_bt: Backtrack):
@@ -230,7 +274,7 @@ def read_pairs_to_guides(
     class_cache = {}
     # initialise counts
     counts = _init_class_counts()
-    align_file = os.path.join(workspace, "tmp.cram")
+    align_file = os.path.join(workspace, "tmp.bam")
 
     with pysam.AlignmentFile(align_file, "wb", header=header, reference_filename=guide_fa, threads=cpus) as af:
         iter = read_iter(seq_file, default_rgid=default_rgid, cpus=cpus, trim_len=trim_len)
@@ -244,16 +288,12 @@ def read_pairs_to_guides(
 
             a_l, a_r = None, None
 
-            (class_type, guide_idx, hits_l, hits_r, orig_l, orig_r) = (
-                None,
-                -1,
-                [],
-                [],
-                None,
-                None,
-            )
+            class_type, hits_l, hits_r, orig_l, orig_r = None, None, None, None, None
+            guide_idx = None
 
-            if pair_lookup not in class_cache:
+            if pair_lookup in class_cache:
+                (class_type, guide_idx, hits_l, hits_r, orig_l, orig_r) = class_cache[pair_lookup]
+            else:
                 (map_l, map_r) = (aligned_results[read_l], aligned_results[read_r])
                 # try to order from most likely to least
                 (
@@ -265,26 +305,31 @@ def read_pairs_to_guides(
                     orig_r,
                 ) = classify_read_pair(map_l, map_r, library)
 
+                hits_l = order_hits(map_l[1], bt_l)
+                hits_r = order_hits(map_r[1], bt_r)
+
                 class_cache[pair_lookup] = (
                     class_type,
                     guide_idx,
-                    order_hits(map_l[1], bt_l),
-                    order_hits(map_r[1], bt_r),
+                    hits_l,
+                    hits_r,
                     orig_l,
                     orig_r,
                 )
 
-            (class_type, guide_idx, hits_l, hits_r, orig_l, orig_r) = class_cache[pair_lookup]
-            if guide_idx != -1:
-                library.guides[guide_idx].count += 1
+            if guide_idx is not None:
+                for gidx in guide_idx:
+                    library.guides[gidx].count += 1
 
             if hits_l:
-                (a_l, multi) = to_mapped_read(seqread_l, ref_ids, library, hits_l, guide_idx=guide_idx)
+                (a_lst, multi) = to_mapped_reads(seqread_l, ref_ids, library, hits_l, guide_idx=guide_idx, dual=True)
+                for a in a_lst:
+                    af.write(a)
                 if multi:
                     stats.multimap_reads += 1
                 stats.mapped_to_guide_reads += 1
             else:
-                a_l = to_alignment(seqread_l, False, [], unmapped=True)
+                a = to_alignment(seqread_l, False, [], unmapped=True)
                 if class_type == CLASSIFICATION.r_multi_5p:
                     stats.multimap_reads += 1
                 else:
@@ -292,13 +337,17 @@ def read_pairs_to_guides(
                         stats.multimap_reads += 1
                     else:
                         stats.unmapped_reads += 1
+                af.write(a)
             if hits_r:
-                (a_r, multi) = to_mapped_read(seqread_r, ref_ids, library, hits_r, guide_idx=guide_idx)
+                (a_lst, multi) = to_mapped_reads(seqread_r, ref_ids, library, hits_r, guide_idx=guide_idx, dual=True)
+                for a in a_lst:
+                    af.write(a)
                 if multi:
                     stats.multimap_reads += 1
                 stats.mapped_to_guide_reads += 1
             else:
-                a_r = to_alignment(seqread_r, False, [], unmapped=True)
+                a = to_alignment(seqread_r, False, [], unmapped=True)
+                af.write(a)
                 if class_type == CLASSIFICATION.r_multi_3p:
                     stats.multimap_reads += 1
                 else:
@@ -307,10 +356,10 @@ def read_pairs_to_guides(
                     else:
                         stats.unmapped_reads += 1
 
-            af.write(a_l)
-            af.write(a_r)
-
-            counts[class_type] += 1
+            if class_type == CLASSIFICATION.match:
+                counts[class_type] += len(guide_idx)
+            else:
+                counts[class_type] += 1
     logging.info(f"Alignment grouping took: {int(time() - start)}s")
     return (counts, align_file)
 
