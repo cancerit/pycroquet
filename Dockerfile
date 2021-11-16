@@ -45,6 +45,8 @@ ENV VIRTUAL_ENV=$OPT/venv
 RUN python3.9 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+RUN pip install --no-cache-dir --upgrade pip==21.3.1 && pip install --no-cache-dir Cython==0.29.24
+
 COPY pycroquet/ pycroquet/
 COPY README.md setup.py requirements.txt requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt
