@@ -72,6 +72,9 @@ def guide_counts_single(
     stats: Stats,
     low_count: int = None,
 ) -> Tuple[str, int]:
+    """
+    Generates the primary result file, reads hitting guides
+    """
     if low_count is True:
         stats.low_count_guides_user = {"lt": low_count, "count": 0}
     count_output = f"{output}.counts.tsv"
@@ -97,6 +100,9 @@ def guide_counts_single(
                 stats.low_count_guides_user["count"] += 1
             print(_fmt_single(guide, count), file=cout)
             count_total += count
+
+    stats.mean_count_per_guide = round(count_total / len(library.guides), 2)
+
     stats_output = f"{output}.stats.json"
     logging.info(f"Writing statistics file: {stats_output}")
     with open(stats_output, "wt") as jout:
@@ -109,6 +115,9 @@ def query_counts(
     stats: Stats,
     output: str,
 ):
+    """
+    This generates a file with the number of incidents of the same query sequence
+    """
     count_output = f"{output}.query_counts.tsv.gz"
     logging.info(f"Writing query counts file: {count_output}")
     with gzip.open(count_output, "wt") as cout:

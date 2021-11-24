@@ -1,5 +1,9 @@
 # CHANGES
 
+## NEXT
+
+- Adds `mean_count_per_guide` statistic to all modes.
+
 ## 1.3.0
 
 - dual-guide: added library header item to deal with reversed read order when comparing against sgRNA.
