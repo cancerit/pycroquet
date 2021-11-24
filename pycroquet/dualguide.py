@@ -471,11 +471,14 @@ def run(
         stats.low_count_guides_user = {"lt": low_count, "count": 0}
     stats.pair_classifications = raw_counts
 
+    total_hits = 0
+
     logging.info(f"Writing counts file: {count_output}")
     with open(count_output, "wt") as cout:
         print("##Command: " + stats.command, file=cout)
         print("##Version: " + stats.version, file=cout)
         print("#" + "\t".join(["id", stats.sample_name]), file=cout)
+
         for g in library.guides:
             print(f"{g.id}\t{g.count}", file=cout)
             if g.count == 0:
@@ -486,7 +489,10 @@ def run(
                 stats.low_count_guides_lt_30 += 1
             if low_count is True and g.count < low_count:
                 stats.low_count_guides_user["count"] += 1
-            stats.total_guides += 1
+            total_hits += g.count
+
+    stats.total_guides = len(library.guides)
+    stats.mean_count_per_guide = total_hits / len(library.guides)
 
     stats_output = f"{output}.stats.json"
     logging.info(f"Writing statistics file: {stats_output}")
