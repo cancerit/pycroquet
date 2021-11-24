@@ -492,7 +492,7 @@ def run(
             total_hits += g.count
 
     stats.total_guides = len(library.guides)
-    stats.mean_count_per_guide = total_hits / len(library.guides)
+    stats.mean_count_per_guide = round(total_hits / len(library.guides), 2)
 
     stats_output = f"{output}.stats.json"
     logging.info(f"Writing statistics file: {stats_output}")

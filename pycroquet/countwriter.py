@@ -101,7 +101,7 @@ def guide_counts_single(
             print(_fmt_single(guide, count), file=cout)
             count_total += count
 
-    stats.mean_count_per_guide = count_total / len(library.guides)
+    stats.mean_count_per_guide = round(count_total / len(library.guides), 2)
 
     stats_output = f"{output}.stats.json"
     logging.info(f"Writing statistics file: {stats_output}")
