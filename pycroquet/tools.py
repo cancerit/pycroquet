@@ -57,9 +57,9 @@ def boundary_mode(mode: str) -> int:
     mode = mode.lower()
     if mode == "exact":
         return 0
-    if mode == "tinq":
-        return 1
     if mode == "qint":
+        return 1
+    if mode == "tinq":
         return 2
     if mode == "all":
         return 3
