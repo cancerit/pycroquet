@@ -27,6 +27,7 @@
 # statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
+import gzip
 import json
 import logging
 import os
@@ -63,53 +64,81 @@ CLASSIFICATION: Final = Classification()
 
 def best_unique_l_mm_r(
     library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]
-) -> Tuple[int, Backtrack, Backtrack]:
+) -> List[Tuple[int, Backtrack, Backtrack]]:
     """
     find the pairing that is most likely to be the real item
     """
     guides_f_r = {}
     bt_l = bt_set_l[0]
     guide_idxs_l = set(library.target_to_guides[bt_l.sm.target])
-    gidx = None
+    good_idx = None
     for bt_r in bt_set_r:
         guide_idxs_r = set(library.target_to_guides[bt_r.sm.target])
         guide_intersect = guide_idxs_l.intersection(guide_idxs_r)
-        if guide_intersect:
-            if len(guide_intersect) > 1:
-                raise ValueError("Multiple guides via intersect has never been seen, extra logic may be required")
-            if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
-                gidx = guide_intersect.pop()
+        for gidx in guide_intersect:
+            guide = library.guides[gidx]
+            if (
+                guide.sgrna_seqs[0] == bt_l.sm.target
+                and guide.sgrna_seqs[1] == bt_r.sm.target
+                and bt_l.sm.reversed is False
+                and bt_r.sm.reversed is True
+            ):
                 guides_f_r[gidx] = (gidx, bt_l, bt_r)
+                good_idx = gidx
     if guides_f_r:
+        hits = []
         if len(guides_f_r) > 1:
-            raise ValueError("Multiple guides has never been seen, extra logic may be required")
-        return guides_f_r[gidx]
+            # logging.error("Multiple guides appear to equally match query pair, guides are:")
+            for gidx in guides_f_r:
+                hits.append(guides_f_r[gidx])
+                # (_, bt_l, bt_r) = guides_f_r[gidx]
+                # logging.error(f"Guide: {library.guides[gidx].sgrna_seqs[0]} | {library.guides[gidx].sgrna_seqs[1]}")
+                # logging.error(f"5p query: {bt_l.sm.query} (reversed: {bt_l.sm.reversed})")
+                # logging.error(f"3p query: {bt_r.sm.query} (reversed: {bt_r.sm.reversed})")
+            # raise ValueError("Before reporting please check '--boundary' is set appropriately.")
+        else:
+            hits.append(guides_f_r[good_idx])
+        return [guides_f_r[good_idx]]
     return None
 
 
 def best_mm_l_unique_r(
     library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]
-) -> Tuple[int, Backtrack, Backtrack]:
+) -> List[Tuple[int, Backtrack, Backtrack]]:
     """
     find the pairing that is most likely to be the real item
     """
     guides_f_r = {}
     bt_r = bt_set_r[0]
     guide_idxs_r = set(library.target_to_guides[bt_r.sm.target])
-    gidx = None
+    good_idx = None
     for bt_l in bt_set_l:
         guide_idxs_l = set(library.target_to_guides[bt_l.sm.target])
         guide_intersect = guide_idxs_r.intersection(guide_idxs_l)
-        if guide_intersect:
-            if len(guide_intersect) > 1:
-                raise ValueError("Multiple guides via intersect has never been seen, extra logic may be required")
-            if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
-                gidx = guide_intersect.pop()
+        for gidx in guide_intersect:
+            guide = library.guides[gidx]
+            if (
+                guide.sgrna_seqs[0] == bt_l.sm.target
+                and guide.sgrna_seqs[1] == bt_r.sm.target
+                and bt_l.sm.reversed is False
+                and bt_r.sm.reversed is True
+            ):
                 guides_f_r[gidx] = (gidx, bt_l, bt_r)
+                good_idx = gidx
     if guides_f_r:
+        hits = []
         if len(guides_f_r) > 1:
-            raise ValueError("Multiple guides has never been seen, extra logic may be required")
-        return guides_f_r[gidx]
+            # logging.error("Multiple guides appear to equally match query pair, guides are:")
+            for gidx in guides_f_r:
+                hits.append(guides_f_r[gidx])
+                # (_, bt_l, bt_r) = guides_f_r[gidx]
+                # logging.error(f"Guide: {library.guides[gidx].sgrna_seqs[0]} | {library.guides[gidx].sgrna_seqs[1]}")
+                # logging.error(f"5p query: {bt_l.sm.query} (reversed: {bt_l.sm.reversed})")
+                # logging.error(f"3p query: {bt_r.sm.query} (reversed: {bt_r.sm.reversed})")
+            # raise ValueError("Before reporting please check '--boundary' is set appropriately.")
+        else:
+            hits.append(guides_f_r[good_idx])
+        return [guides_f_r[good_idx]]
     return None
 
 
@@ -199,10 +228,12 @@ def classify_read_pair(
             else:
                 return (CLASSIFICATION.f_open_3p, None, bt_l, None, mtype_l, mtype_r)
         # then one end multimap
-        best_pair = best_unique_l_mm_r(library, mdata_l, mdata_r)
+        best_pairs = best_unique_l_mm_r(library, mdata_l, mdata_r)
         # above function checks orientation, if not as expected this goes to *_multi_3p
-        if best_pair:
-            (gidx, bt_l, bt_r) = best_pair
+        if best_pairs:
+            (gidx, bt_l, bt_r) = best_pairs[0]
+            if len(best_pairs) > 1:
+                return (CLASSIFICATION.f_multi_3p, None, bt_l, None, mtype_l, "multimap")
             gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
             if gidx:
                 return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
@@ -221,10 +252,12 @@ def classify_read_pair(
             else:
                 return (CLASSIFICATION.f_open_5p, None, None, bt_r, mtype_l, mtype_r)
         # then one end multimap
-        best_pair = best_mm_l_unique_r(library, mdata_l, mdata_r)
+        best_pairs = best_mm_l_unique_r(library, mdata_l, mdata_r)
         # above function checks orientation, if not as expected this goes to *_multi_5p
-        if best_pair:
-            (gidx, bt_l, bt_r) = best_pair
+        if best_pairs:
+            (gidx, bt_l, bt_r) = best_pairs[0]
+            if len(best_pairs) > 1:
+                return (CLASSIFICATION.f_multi_5p, None, None, bt_r, "multimap", mtype_r)
             gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
             if gidx:
                 return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
@@ -275,6 +308,8 @@ def read_pairs_to_guides(
     # initialise counts
     counts = _init_class_counts()
     align_file = os.path.join(workspace, "tmp.bam")
+
+    pair_type_info = {}
 
     with pysam.AlignmentFile(align_file, "wb", header=header, reference_filename=guide_fa, threads=cpus) as af:
         iter = read_iter(seq_file, default_rgid=default_rgid, cpus=cpus, trim_len=trim_len)
@@ -360,8 +395,33 @@ def read_pairs_to_guides(
                 counts[class_type] += len(guide_idx)
             else:
                 counts[class_type] += 1
+
+            if pair_lookup not in pair_type_info:
+                classify = {"hit_l": "N", "hit_r": "N", "hit_pair": "N", "count": 0}
+                pair_type_info[pair_lookup] = classify
+                if class_type == CLASSIFICATION.match:
+                    classify["hit_l"] = "Y"
+                    classify["hit_r"] = "Y"
+                    classify["hit_pair"] = "Y"
+                elif class_type in (
+                    CLASSIFICATION.aberrant_match,
+                    CLASSIFICATION.ambiguous,
+                    CLASSIFICATION.f_multi_3p,
+                    CLASSIFICATION.r_multi_3p,
+                    CLASSIFICATION.f_multi_5p,
+                    CLASSIFICATION.r_multi_5p,
+                ):
+                    classify["hit_l"] = "Y"
+                    classify["hit_r"] = "Y"
+                elif class_type in (CLASSIFICATION.f_open_3p, CLASSIFICATION.r_open_3p):
+                    classify["hit_l"] = "Y"
+                elif class_type in (CLASSIFICATION.f_open_5p, CLASSIFICATION.r_open_5p):
+                    classify["hit_r"] = "Y"
+
+            pair_type_info[pair_lookup]["count"] += 1
+
     logging.info(f"Alignment grouping took: {int(time() - start)}s")
-    return (counts, align_file)
+    return (counts, align_file, pair_type_info)
 
 
 def pickles_to_mapset(pickles: List[str], reads: Dict[str, int], aligner: AlignerCpu):
@@ -451,7 +511,7 @@ def run(
     # * generate the fasta for the guides in workspace
     (guide_fa, header, ref_ids, default_rgid) = guide_header(workspace, library, stats, seq_file)
 
-    (raw_counts, unsorted) = read_pairs_to_guides(
+    (raw_counts, unsorted, pair_type_info) = read_pairs_to_guides(
         workspace,
         aligned_results,
         library,
@@ -498,6 +558,16 @@ def run(
     logging.info(f"Writing statistics file: {stats_output}")
     with open(stats_output, "wt") as jout:
         print(json.dumps(stats.__dict__, sort_keys=True, indent=2), file=jout)
+
+    seqclass_output = f"{output}.query_class.tsv.gz"
+    logging.info(f"Writing query sequence classifications: {seqclass_output}")
+    with gzip.open(seqclass_output, "wt") as scot:
+        print(f"#read_seqs\thit_l\thit_r\thit_pair\tcount", file=scot)
+        for k in sorted(pair_type_info.keys()):
+            print(
+                f'{k}\t{pair_type_info[k]["hit_l"]}\t{pair_type_info[k]["hit_r"]}\t{pair_type_info[k]["hit_pair"]}\t{pair_type_info[k]["count"]}',
+                file=scot,
+            )
 
     hts_sort_n_index(unsorted, guide_fa, output, workspace, cpus=usable_cpu)
 
