@@ -265,7 +265,7 @@ def single_guide(*args, **kwargs):
     singleguide.run(*args, **kwargs)
 
 
-@cli.command()
+@cli.command(epilog=HELP_EPILOG)
 @common_params
 @chunk_default
 @click.option(
@@ -285,7 +285,7 @@ def dual_guide(*args, **kwargs):
     dualguide.run(*args, **kwargs)
 
 
-@cli.command()
+@cli.command(epilog=HELP_EPILOG)
 @common_params
 @sge_extra
 @debug_params
