@@ -64,53 +64,81 @@ CLASSIFICATION: Final = Classification()
 
 def best_unique_l_mm_r(
     library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]
-) -> Tuple[int, Backtrack, Backtrack]:
+) -> List[Tuple[int, Backtrack, Backtrack]]:
     """
     find the pairing that is most likely to be the real item
     """
     guides_f_r = {}
     bt_l = bt_set_l[0]
     guide_idxs_l = set(library.target_to_guides[bt_l.sm.target])
-    gidx = None
+    good_idx = None
     for bt_r in bt_set_r:
         guide_idxs_r = set(library.target_to_guides[bt_r.sm.target])
         guide_intersect = guide_idxs_l.intersection(guide_idxs_r)
-        if guide_intersect:
-            if len(guide_intersect) > 1:
-                raise ValueError("Multiple guides via intersect has never been seen, extra logic may be required")
-            if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
-                gidx = guide_intersect.pop()
+        for gidx in guide_intersect:
+            guide = library.guides[gidx]
+            if (
+                guide.sgrna_seqs[0] == bt_l.sm.target
+                and guide.sgrna_seqs[1] == bt_r.sm.target
+                and bt_l.sm.reversed is False
+                and bt_r.sm.reversed is True
+            ):
                 guides_f_r[gidx] = (gidx, bt_l, bt_r)
+                good_idx = gidx
     if guides_f_r:
+        hits = []
         if len(guides_f_r) > 1:
-            raise ValueError("Multiple guides has never been seen, extra logic may be required")
-        return guides_f_r[gidx]
+            # logging.error("Multiple guides appear to equally match query pair, guides are:")
+            for gidx in guides_f_r:
+                hits.append(guides_f_r[gidx])
+                # (_, bt_l, bt_r) = guides_f_r[gidx]
+                # logging.error(f"Guide: {library.guides[gidx].sgrna_seqs[0]} | {library.guides[gidx].sgrna_seqs[1]}")
+                # logging.error(f"5p query: {bt_l.sm.query} (reversed: {bt_l.sm.reversed})")
+                # logging.error(f"3p query: {bt_r.sm.query} (reversed: {bt_r.sm.reversed})")
+            # raise ValueError("Before reporting please check '--boundary' is set appropriately.")
+        else:
+            hits.append(guides_f_r[good_idx])
+        return [guides_f_r[good_idx]]
     return None
 
 
 def best_mm_l_unique_r(
     library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]
-) -> Tuple[int, Backtrack, Backtrack]:
+) -> List[Tuple[int, Backtrack, Backtrack]]:
     """
     find the pairing that is most likely to be the real item
     """
     guides_f_r = {}
     bt_r = bt_set_r[0]
     guide_idxs_r = set(library.target_to_guides[bt_r.sm.target])
-    gidx = None
+    good_idx = None
     for bt_l in bt_set_l:
         guide_idxs_l = set(library.target_to_guides[bt_l.sm.target])
         guide_intersect = guide_idxs_r.intersection(guide_idxs_l)
-        if guide_intersect:
-            if len(guide_intersect) > 1:
-                raise ValueError("Multiple guides via intersect has never been seen, extra logic may be required")
-            if bt_l.sm.reversed is False and bt_r.sm.reversed is True:
-                gidx = guide_intersect.pop()
+        for gidx in guide_intersect:
+            guide = library.guides[gidx]
+            if (
+                guide.sgrna_seqs[0] == bt_l.sm.target
+                and guide.sgrna_seqs[1] == bt_r.sm.target
+                and bt_l.sm.reversed is False
+                and bt_r.sm.reversed is True
+            ):
                 guides_f_r[gidx] = (gidx, bt_l, bt_r)
+                good_idx = gidx
     if guides_f_r:
+        hits = []
         if len(guides_f_r) > 1:
-            raise ValueError("Multiple guides has never been seen, extra logic may be required")
-        return guides_f_r[gidx]
+            # logging.error("Multiple guides appear to equally match query pair, guides are:")
+            for gidx in guides_f_r:
+                hits.append(guides_f_r[gidx])
+                # (_, bt_l, bt_r) = guides_f_r[gidx]
+                # logging.error(f"Guide: {library.guides[gidx].sgrna_seqs[0]} | {library.guides[gidx].sgrna_seqs[1]}")
+                # logging.error(f"5p query: {bt_l.sm.query} (reversed: {bt_l.sm.reversed})")
+                # logging.error(f"3p query: {bt_r.sm.query} (reversed: {bt_r.sm.reversed})")
+            # raise ValueError("Before reporting please check '--boundary' is set appropriately.")
+        else:
+            hits.append(guides_f_r[good_idx])
+        return [guides_f_r[good_idx]]
     return None
 
 
@@ -200,10 +228,12 @@ def classify_read_pair(
             else:
                 return (CLASSIFICATION.f_open_3p, None, bt_l, None, mtype_l, mtype_r)
         # then one end multimap
-        best_pair = best_unique_l_mm_r(library, mdata_l, mdata_r)
+        best_pairs = best_unique_l_mm_r(library, mdata_l, mdata_r)
         # above function checks orientation, if not as expected this goes to *_multi_3p
-        if best_pair:
-            (gidx, bt_l, bt_r) = best_pair
+        if best_pairs:
+            (gidx, bt_l, bt_r) = best_pairs[0]
+            if len(best_pairs) > 1:
+                return (CLASSIFICATION.f_multi_3p, None, bt_l, None, mtype_l, "multimap")
             gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
             if gidx:
                 return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
@@ -222,10 +252,12 @@ def classify_read_pair(
             else:
                 return (CLASSIFICATION.f_open_5p, None, None, bt_r, mtype_l, mtype_r)
         # then one end multimap
-        best_pair = best_mm_l_unique_r(library, mdata_l, mdata_r)
+        best_pairs = best_mm_l_unique_r(library, mdata_l, mdata_r)
         # above function checks orientation, if not as expected this goes to *_multi_5p
-        if best_pair:
-            (gidx, bt_l, bt_r) = best_pair
+        if best_pairs:
+            (gidx, bt_l, bt_r) = best_pairs[0]
+            if len(best_pairs) > 1:
+                return (CLASSIFICATION.f_multi_5p, None, None, bt_r, "multimap", mtype_r)
             gidx = library.guide_by_sgrna_set(bt_l.sm.target, bt_r.sm.target)
             if gidx:
                 return (CLASSIFICATION.match, gidx, bt_l, bt_r, mtype_l, mtype_r)
