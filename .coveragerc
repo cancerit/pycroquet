@@ -4,7 +4,7 @@ branch = true
 #     */cli.py
 
 [report]
-fail_under = 70
+fail_under = 65
 precision = 2
 # omit =
 #     */cli.py
