@@ -27,6 +27,7 @@
 # statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
+import gzip
 import json
 import logging
 import os
@@ -276,6 +277,8 @@ def read_pairs_to_guides(
     counts = _init_class_counts()
     align_file = os.path.join(workspace, "tmp.bam")
 
+    pair_type_info = {}
+
     with pysam.AlignmentFile(align_file, "wb", header=header, reference_filename=guide_fa, threads=cpus) as af:
         iter = read_iter(seq_file, default_rgid=default_rgid, cpus=cpus, trim_len=trim_len)
         for seqread_l in iter:
@@ -360,8 +363,33 @@ def read_pairs_to_guides(
                 counts[class_type] += len(guide_idx)
             else:
                 counts[class_type] += 1
+
+            if pair_lookup not in pair_type_info:
+                classify = {"hit_l": "N", "hit_r": "N", "hit_pair": "N", "count": 0}
+                pair_type_info[pair_lookup] = classify
+                if class_type == CLASSIFICATION.match:
+                    classify["hit_l"] = "Y"
+                    classify["hit_r"] = "Y"
+                    classify["hit_pair"] = "Y"
+                elif class_type in (
+                    CLASSIFICATION.aberrant_match,
+                    CLASSIFICATION.ambiguous,
+                    CLASSIFICATION.f_multi_3p,
+                    CLASSIFICATION.r_multi_3p,
+                    CLASSIFICATION.f_multi_5p,
+                    CLASSIFICATION.r_multi_5p,
+                ):
+                    classify["hit_l"] = "Y"
+                    classify["hit_r"] = "Y"
+                elif class_type in (CLASSIFICATION.f_open_3p, CLASSIFICATION.r_open_3p):
+                    classify["hit_l"] = "Y"
+                elif class_type in (CLASSIFICATION.f_open_5p, CLASSIFICATION.r_open_5p):
+                    classify["hit_r"] = "Y"
+
+            pair_type_info[pair_lookup]["count"] += 1
+
     logging.info(f"Alignment grouping took: {int(time() - start)}s")
-    return (counts, align_file)
+    return (counts, align_file, pair_type_info)
 
 
 def pickles_to_mapset(pickles: List[str], reads: Dict[str, int], aligner: AlignerCpu):
@@ -451,7 +479,7 @@ def run(
     # * generate the fasta for the guides in workspace
     (guide_fa, header, ref_ids, default_rgid) = guide_header(workspace, library, stats, seq_file)
 
-    (raw_counts, unsorted) = read_pairs_to_guides(
+    (raw_counts, unsorted, pair_type_info) = read_pairs_to_guides(
         workspace,
         aligned_results,
         library,
@@ -498,6 +526,16 @@ def run(
     logging.info(f"Writing statistics file: {stats_output}")
     with open(stats_output, "wt") as jout:
         print(json.dumps(stats.__dict__, sort_keys=True, indent=2), file=jout)
+
+    seqclass_output = f"{output}.query_class.tsv.gz"
+    logging.info(f"Writing query sequence classifications: {seqclass_output}")
+    with gzip.open(seqclass_output, "wt") as scot:
+        print(f"#read_seqs\thit_l\thit_r\thit_pair\tcount", file=scot)
+        for k in sorted(pair_type_info.keys()):
+            print(
+                f'{k}\t{pair_type_info[k]["hit_l"]}\t{pair_type_info[k]["hit_r"]}\t{pair_type_info[k]["hit_pair"]}\t{pair_type_info[k]["count"]}',
+                file=scot,
+            )
 
     hts_sort_n_index(unsorted, guide_fa, output, workspace, cpus=usable_cpu)
 
