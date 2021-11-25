@@ -1,5 +1,12 @@
 # CHANGES
 
+## 1.4.0
+
+- Adds `mean_count_per_guide` statistic to all modes.
+- Correct bug in `--boundary` mode mapping (TinQ and QinT reversed).
+- dual-guide: expand classifications to handle multiple guide-pair hits when one end unique.
+- dual-guide: Adds the `*.query_class.tsv.gz` file for use in debugging (see #4).
+
 ## 1.3.0
 
 - dual-guide: added library header item to deal with reversed read order when comparing against sgRNA.

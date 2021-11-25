@@ -174,6 +174,7 @@ class Stats:
     zero_count_guides: int = 0
     low_count_guides_lt_15: int = 0
     low_count_guides_lt_30: int = 0
+    mean_count_per_guide: int = 0
     length_excluded_reads: int = None
     low_count_guides_user: Dict[str, int] = None
     reversed_reads: bool = False
