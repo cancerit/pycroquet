@@ -61,6 +61,15 @@ from pycroquet.readwriter import to_mapped_reads
 
 CLASSIFICATION: Final = Classification()
 
+READCLASS_HEADER = [
+    "## hit_l and hit_r: Y/N/M",
+    "## Where:",
+    "##   Y = Mapped to target",
+    "##   N = Not mapped to target",
+    "##   M = Mapped to multiple targets, but resolved via pairing",
+    "## hit_type: MATCH, SWAP, AMBIGUOUS, ABERRANT, NO_MATCH",
+]
+
 
 def best_unique_l_mm_r(
     library: Library, bt_set_l: List[Backtrack], bt_set_r: List[Backtrack]
@@ -91,11 +100,6 @@ def best_unique_l_mm_r(
             # logging.error("Multiple guides appear to equally match query pair, guides are:")
             for gidx in guides_f_r:
                 hits.append(guides_f_r[gidx])
-                # (_, bt_l, bt_r) = guides_f_r[gidx]
-                # logging.error(f"Guide: {library.guides[gidx].sgrna_seqs[0]} | {library.guides[gidx].sgrna_seqs[1]}")
-                # logging.error(f"5p query: {bt_l.sm.query} (reversed: {bt_l.sm.reversed})")
-                # logging.error(f"3p query: {bt_r.sm.query} (reversed: {bt_r.sm.reversed})")
-            # raise ValueError("Before reporting please check '--boundary' is set appropriately.")
         else:
             hits.append(guides_f_r[good_idx])
         return [guides_f_r[good_idx]]
@@ -131,11 +135,6 @@ def best_mm_l_unique_r(
             # logging.error("Multiple guides appear to equally match query pair, guides are:")
             for gidx in guides_f_r:
                 hits.append(guides_f_r[gidx])
-                # (_, bt_l, bt_r) = guides_f_r[gidx]
-                # logging.error(f"Guide: {library.guides[gidx].sgrna_seqs[0]} | {library.guides[gidx].sgrna_seqs[1]}")
-                # logging.error(f"5p query: {bt_l.sm.query} (reversed: {bt_l.sm.reversed})")
-                # logging.error(f"3p query: {bt_r.sm.query} (reversed: {bt_r.sm.reversed})")
-            # raise ValueError("Before reporting please check '--boundary' is set appropriately.")
         else:
             hits.append(guides_f_r[good_idx])
         return [guides_f_r[good_idx]]
@@ -397,22 +396,36 @@ def read_pairs_to_guides(
                 counts[class_type] += 1
 
             if pair_lookup not in pair_type_info:
-                classify = {"hit_l": "N", "hit_r": "N", "hit_pair": "N", "count": 0}
+                classify = {"hit_l": "N", "hit_r": "N", "hit_type": "NO_MATCH", "count": 0}
                 pair_type_info[pair_lookup] = classify
                 if class_type == CLASSIFICATION.match:
                     classify["hit_l"] = "Y"
                     classify["hit_r"] = "Y"
-                    classify["hit_pair"] = "Y"
+                    classify["hit_type"] = "MATCH"
+                elif class_type == CLASSIFICATION.swap:
+                    classify["hit_l"] = "Y"
+                    classify["hit_r"] = "Y"
+                    classify["hit_type"] = "SWAP"
                 elif class_type in (
-                    CLASSIFICATION.aberrant_match,
-                    CLASSIFICATION.ambiguous,
                     CLASSIFICATION.f_multi_3p,
                     CLASSIFICATION.r_multi_3p,
+                ):
+                    classify["hit_l"] = "Y"
+                    classify["hit_r"] = "M"
+                elif class_type in (
                     CLASSIFICATION.f_multi_5p,
                     CLASSIFICATION.r_multi_5p,
                 ):
+                    classify["hit_l"] = "M"
+                    classify["hit_r"] = "Y"
+                elif class_type == CLASSIFICATION.aberrant_match:
                     classify["hit_l"] = "Y"
                     classify["hit_r"] = "Y"
+                    classify["hit_type"] = "ABERRANT"
+                elif CLASSIFICATION.ambiguous:
+                    classify["hit_l"] = "Y"
+                    classify["hit_r"] = "Y"
+                    classify["hit_type"] = "AMBIGUOUS"
                 elif class_type in (CLASSIFICATION.f_open_3p, CLASSIFICATION.r_open_3p):
                     classify["hit_l"] = "Y"
                 elif class_type in (CLASSIFICATION.f_open_5p, CLASSIFICATION.r_open_5p):
@@ -562,10 +575,12 @@ def run(
     seqclass_output = f"{output}.query_class.tsv.gz"
     logging.info(f"Writing query sequence classifications: {seqclass_output}")
     with gzip.open(seqclass_output, "wt") as scot:
-        print(f"#read_seqs\thit_l\thit_r\thit_pair\tcount", file=scot)
+        for h in READCLASS_HEADER:
+            print(h, file=scot)
+        print(f"#read_seqs\thit_l\thit_r\thit_type\tcount", file=scot)
         for k in sorted(pair_type_info.keys()):
             print(
-                f'{k}\t{pair_type_info[k]["hit_l"]}\t{pair_type_info[k]["hit_r"]}\t{pair_type_info[k]["hit_pair"]}\t{pair_type_info[k]["count"]}',
+                f'{k}\t{pair_type_info[k]["hit_l"]}\t{pair_type_info[k]["hit_r"]}\t{pair_type_info[k]["hit_type"]}\t{pair_type_info[k]["count"]}',
                 file=scot,
             )
 
