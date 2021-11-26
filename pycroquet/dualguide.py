@@ -67,7 +67,7 @@ READCLASS_HEADER = [
     "##   Y = Mapped to target",
     "##   N = Not mapped to target",
     "##   M = Mapped to multiple targets, but resolved via pairing",
-    "## hit_type: MATCH, SWAP, AMBIGUOUS, ABERRANT, NO_MATCH",
+    "## hit_type: Same as extended stats, see GitHub README",
 ]
 
 
@@ -396,45 +396,49 @@ def read_pairs_to_guides(
                 counts[class_type] += 1
 
             if pair_lookup not in pair_type_info:
-                classify = {"hit_l": "N", "hit_r": "N", "hit_type": "NO_MATCH", "count": 0}
-                pair_type_info[pair_lookup] = classify
-                if class_type == CLASSIFICATION.match:
-                    classify["hit_l"] = "Y"
-                    classify["hit_r"] = "Y"
-                    classify["hit_type"] = "MATCH"
-                elif class_type == CLASSIFICATION.swap:
-                    classify["hit_l"] = "Y"
-                    classify["hit_r"] = "Y"
-                    classify["hit_type"] = "SWAP"
-                elif class_type in (
-                    CLASSIFICATION.f_multi_3p,
-                    CLASSIFICATION.r_multi_3p,
-                ):
-                    classify["hit_l"] = "Y"
-                    classify["hit_r"] = "M"
-                elif class_type in (
-                    CLASSIFICATION.f_multi_5p,
-                    CLASSIFICATION.r_multi_5p,
-                ):
-                    classify["hit_l"] = "M"
-                    classify["hit_r"] = "Y"
-                elif class_type == CLASSIFICATION.aberrant_match:
-                    classify["hit_l"] = "Y"
-                    classify["hit_r"] = "Y"
-                    classify["hit_type"] = "ABERRANT"
-                elif CLASSIFICATION.ambiguous:
-                    classify["hit_l"] = "Y"
-                    classify["hit_r"] = "Y"
-                    classify["hit_type"] = "AMBIGUOUS"
-                elif class_type in (CLASSIFICATION.f_open_3p, CLASSIFICATION.r_open_3p):
-                    classify["hit_l"] = "Y"
-                elif class_type in (CLASSIFICATION.f_open_5p, CLASSIFICATION.r_open_5p):
-                    classify["hit_r"] = "Y"
-
+                pair_type_info[pair_lookup] = classify_readpair(class_type)
             pair_type_info[pair_lookup]["count"] += 1
 
     logging.info(f"Alignment grouping took: {int(time() - start)}s")
     return (counts, align_file, pair_type_info)
+
+
+def classify_readpair(class_type: Classification) -> Dict[str, str]:
+    classify = {"hit_l": None, "hit_r": None, "hit_type": str(class_type), "count": 0}
+    if class_type == CLASSIFICATION.no_match:
+        classify["hit_l"] = "N"
+        classify["hit_r"] = "N"
+    elif class_type == CLASSIFICATION.match:
+        classify["hit_l"] = "Y"
+        classify["hit_r"] = "Y"
+    elif class_type == CLASSIFICATION.swap:
+        classify["hit_l"] = "Y"
+        classify["hit_r"] = "Y"
+    elif class_type in (
+        CLASSIFICATION.f_multi_3p,
+        CLASSIFICATION.r_multi_3p,
+    ):
+        classify["hit_l"] = "Y"
+        classify["hit_r"] = "M"
+    elif class_type in (
+        CLASSIFICATION.f_multi_5p,
+        CLASSIFICATION.r_multi_5p,
+    ):
+        classify["hit_l"] = "M"
+        classify["hit_r"] = "Y"
+    elif class_type == CLASSIFICATION.aberrant_match:
+        classify["hit_l"] = "Y"
+        classify["hit_r"] = "Y"
+    elif CLASSIFICATION.ambiguous:
+        classify["hit_l"] = "Y"
+        classify["hit_r"] = "Y"
+    elif class_type in (CLASSIFICATION.f_open_3p, CLASSIFICATION.r_open_3p):
+        classify["hit_l"] = "Y"
+    elif class_type in (CLASSIFICATION.f_open_5p, CLASSIFICATION.r_open_5p):
+        classify["hit_r"] = "Y"
+    else:
+        raise ValueError(f"All classifications haven't been assessed, got {str(class_type)}")
+    return classify
 
 
 def pickles_to_mapset(pickles: List[str], reads: Dict[str, int], aligner: AlignerCpu):
