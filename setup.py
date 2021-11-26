@@ -38,7 +38,7 @@ config = {
     "author": "Keiran M Raine",
     "url": "https://github.com/cancerit/pycroquet",
     "author_email": "cgphelp@sanger.ac.uk",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "license": "AGPL-3.0",
     "python_requires": ">= 3.9",
     "install_requires": ["click", "click-option-group", "python-magic", "pysam", "pygas", "PyYAML"],

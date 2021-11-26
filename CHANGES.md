@@ -1,5 +1,9 @@
 # CHANGES
 
+## 1.4.1
+
+Use classifications in the `*.query_class.tsv.gz` file.
+
 ## 1.4.0
 
 - Adds `mean_count_per_guide` statistic to all modes.
