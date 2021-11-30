@@ -106,7 +106,7 @@ def guide_counts_single(
     stats_output = f"{output}.stats.json"
     logging.info(f"Writing statistics file: {stats_output}")
     with open(stats_output, "wt") as jout:
-        print(json.dumps(stats.__dict__, sort_keys=True, indent=2), file=jout)
+        print(stats.as_json(), file=jout)
     return (count_output, count_total)
 
 

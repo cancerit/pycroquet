@@ -27,6 +27,8 @@
 # statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
+import copy
+import json
 import os
 import sys
 from array import array
@@ -182,15 +184,22 @@ class Stats:
     command: str = None
     sample_name: str = None
     pair_classifications: Dict[str, int] = None
+    merged_from: List["Stats"] = None
 
     def __post_init__(self):
-        self.command = ""
-        for i, e in enumerate(sys.argv):
-            if i == 0:
-                self.command += f"{os.path.basename(e)}"
-                continue
-            self.command += f" {e}"
-        self.version = pkg_resources.require(__name__.split(".")[0])[0].version
+        if self.command is None:
+            self.command = ""
+            for i, e in enumerate(sys.argv):
+                if i == 0:
+                    self.command += f"{os.path.basename(e)}"
+                    continue
+                self.command += f" {e}"
+            self.version = pkg_resources.require(__name__.split(".")[0])[0].version
+
+    def as_json(self):
+        # need to convert Stats child objects to simple dicts
+        self.merged_from = [vars(m_frm) for m_frm in self.merged_from]
+        return json.dumps(self.__dict__, sort_keys=True, indent=2)
 
 
 @dataclass
