@@ -541,7 +541,7 @@ def run(
         cpus=usable_cpu,
         trim_len=trimseq,
     )
-    count_output = f"{output}.counts.tsv"
+    count_output = f"{output}.counts.tsv.gz"
 
     # initialise
     if low_count is True:
@@ -551,7 +551,7 @@ def run(
     total_hits = 0
 
     logging.info(f"Writing counts file: {count_output}")
-    with open(count_output, "wt") as cout:
+    with gzip.open(count_output, "wt") as cout:
         print("##Command: " + stats.command, file=cout)
         print("##Version: " + stats.version, file=cout)
         print("#" + "\t".join(["id", stats.sample_name]), file=cout)

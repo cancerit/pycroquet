@@ -77,11 +77,11 @@ def guide_counts_single(
     """
     if low_count is True:
         stats.low_count_guides_user = {"lt": low_count, "count": 0}
-    count_output = f"{output}.counts.tsv"
+    count_output = f"{output}.counts.tsv.gz"
     logging.info(f"Writing counts file: {count_output}")
     count_total = 0
     # target_to_guides = library.target_to_guides  # can't remember why I included this
-    with open(count_output, "wt") as cout:
+    with gzip.open(count_output, "wt") as cout:
         print("##Command: " + stats.command, file=cout)
         print("##Version: " + stats.version, file=cout)
         print(_header(stats.sample_name), file=cout)

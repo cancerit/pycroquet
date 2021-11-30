@@ -40,6 +40,7 @@ from click_option_group import OptionGroup
 from pycroquet import dualguide
 from pycroquet import libparser
 from pycroquet import main
+from pycroquet import merge as merge
 from pycroquet import readwriter
 from pycroquet import sge as pysge
 from pycroquet import singleguide
@@ -260,7 +261,7 @@ def cli():  # pragma: no cover
 @debug_params
 def single_guide(*args, **kwargs):
     """
-    Single guide - map read file to library guides and output counts, statistics and alignments files.
+    Map read file to library guides and output counts, statistics and alignments files.
     """
     singleguide.run(*args, **kwargs)
 
@@ -280,7 +281,7 @@ def single_guide(*args, **kwargs):
 @debug_params
 def dual_guide(*args, **kwargs):
     """
-    Dual guide - map read file to library guides and output counts, statistics and alignments files.
+    Map read file to library guides and output counts, statistics and alignments files.
     """
     dualguide.run(*args, **kwargs)
 
@@ -291,7 +292,7 @@ def dual_guide(*args, **kwargs):
 @debug_params
 def long_read(*args, **kwargs):
     """
-    log-read - map read file to library guides and output counts, statistics and alignments files.
+    Map read file to library guides and output counts, statistics and alignments files.
     Different to single-guide due to read filtering and other defaults
     """
     pysge.run(*args, **kwargs)
@@ -313,3 +314,35 @@ def guides_to_fa(guidelib, fasta, loglevel):
     """
     _log_setup(loglevel)
     readwriter.guide_fasta(libparser.load(guidelib), fasta, index=True)
+
+
+@cli.command()
+@click.option(
+    "-o",
+    "--output",
+    required=True,
+    type=click.Path(exists=False, file_okay=True, resolve_path=True),
+    help=HELP_OUTPUT,
+)
+@click.option(
+    "--inputs",
+    "-i",
+    multiple=True,
+    required=True,
+    help="Count file output from single-guide, expects co-located stats.json",
+)
+@click.option(
+    "-c",
+    "--checksum",
+    required=False,
+    default="md5",
+    show_default=True,
+    type=click.Choice(["md5", "sha256"], case_sensitive=False),
+    help="Specify type of checksum used",
+)
+@debug_params
+def merge_single(*args, **kwargs):
+    """
+    Merge count.tsv and stats.json output files from single-guide sub-command.
+    """
+    merge.merge_single(*args, **kwargs)
