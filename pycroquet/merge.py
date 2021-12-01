@@ -27,6 +27,7 @@
 # statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
+import copy
 import gzip
 import hashlib
 import json
@@ -68,7 +69,7 @@ def hash_file(count_file: str, chksum_type) -> str:
     return f"{chksum_type}: {file_hash.hexdigest()}"
 
 
-def merge_single_stats(count_files: List[str]):
+def merge_stats(count_files: List[str]):
     """
     - loads each json into a stats object
     - sum relevant counts into new stats object
@@ -90,6 +91,14 @@ def merge_single_stats(count_files: List[str]):
                     continue
                 if k in STATS_SUMABLE:
                     setattr(new_stats, k, getattr(new_stats, k) + v)
+            # deal with dual-guide specific extension
+            if this_stats.pair_classifications is not None:
+                if new_stats.pair_classifications is None:
+                    new_stats.pair_classifications = copy.deepcopy(this_stats.pair_classifications)
+                else:
+                    for k, v in this_stats.pair_classifications.items():
+                        new_stats.pair_classifications[k] += v
+
             stat_set.append(this_stats)
     new_stats.merged_from = stat_set
     new_stats.total_guides = stat_set[0].total_guides
@@ -121,9 +130,6 @@ def load_single_count(count_file: str, file_idx: int, chksum_type: str):
         line = line.strip()
         if line.startswith("#"):
             if line.startswith("##Command"):
-                if "pycroquet single-guide" not in line:
-                    logging.critical(f"Command header does not indicate single-guide: {line}")
-                    sys.exit(2)
                 cmd = line
             elif line.startswith("##Version"):
                 version = line
@@ -140,7 +146,7 @@ def load_single_count(count_file: str, file_idx: int, chksum_type: str):
     return (merge_header_line(cmd, version, file_idx, chk_item), sample, data_set)
 
 
-def merge_single_data(inputs: List[str], chksum_type: str):
+def merge_count_data(inputs: List[str], chksum_type: str):
     input_idx = 0
     exp_sample = None
     header_lines = []
@@ -173,17 +179,23 @@ def merge_single_data(inputs: List[str], chksum_type: str):
     return (exp_sample, final_data, header_lines)
 
 
-def output_merged(output: str, sample: str, merged_data: List[List[Any]], header_lines: List[str], merged_stats: Stats):
+def output_merged(
+    output: str, sample: str, merged_data: List[List[Any]], header_lines: List[str], merged_stats: Stats, low_count: int
+):
     new_cols = [*SINGLE_COLS, sample]
     merged_counts = f"{output}.merged-counts.tsv.gz"
     total_count = 0
     with gzip.open(merged_counts, "wt") as ofh:
         sample_idx = 0
+        print(f"##Command: {merged_stats.command}", file=ofh)
+        print(f"##Version: {merged_stats.version}", file=ofh)
         for hl in header_lines:
             sample_idx += 1
             print(hl, file=ofh)
             new_cols.append(str(sample_idx))
         print("\t".join(new_cols), file=ofh)
+
+        lc_val = 0
         for row in merged_data:
             # @todo - need to assess 15/30/custom low guide counts
             summed = sum(row[5:])
@@ -194,14 +206,20 @@ def output_merged(output: str, sample: str, merged_data: List[List[Any]], header
                 merged_stats.low_count_guides_lt_15 += 1
             if summed < 30:
                 merged_stats.low_count_guides_lt_30 += 1
+            if low_count is not None and summed < low_count:
+                lc_val += 1
             print("\t".join([str(e) for e in [*row[0:5], summed, *row[5:]]]), file=ofh)
     merged_stats.mean_count_per_guide = round(total_count / merged_stats.total_guides, 2)
+
+    if low_count is not None:
+        merged_stats.low_count_guides_user = {"lt": low_count, "count": lc_val}
+
     stats_file = f"{output}.merged-stats.json"
     with open(stats_file, "wt") as jfh:
         print(merged_stats.as_json(), file=jfh)
 
 
-def merge_single(output: str, inputs: List[str], checksum: str, loglevel: str):
+def merge_counts(output: str, inputs: List[str], low_count: int, checksum: str, loglevel: str):
     # command/version will be required in new header
     # need to validate
     #   All columns are exact match except counts, order is maintained
@@ -210,10 +228,6 @@ def merge_single(output: str, inputs: List[str], checksum: str, loglevel: str):
     if len(inputs) < 2:
         logging.critical("At least 2 count files must be provided")
         sys.exit(2)
-    merged_stats = merge_single_stats(inputs)
-    (sample, merged_data, header_lines) = merge_single_data(inputs, checksum)
-    output_merged(output, sample, merged_data, header_lines, merged_stats)
-
-
-def merge_dual(output: str, inputs: List[str], checksum: str, loglevel: str):
-    pass
+    merged_stats = merge_stats(inputs)
+    (sample, merged_data, header_lines) = merge_count_data(inputs, checksum)
+    output_merged(output, sample, merged_data, header_lines, merged_stats, low_count)
