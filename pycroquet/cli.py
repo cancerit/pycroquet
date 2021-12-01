@@ -329,7 +329,7 @@ def guides_to_fa(guidelib, fasta, loglevel):
     "-i",
     multiple=True,
     required=True,
-    help="Count file output from single-guide, expects co-located stats.json",
+    help="Count file output from single-guide/long-read, expects co-located stats.json",
 )
 @click.option(
     "-c",
@@ -343,6 +343,38 @@ def guides_to_fa(guidelib, fasta, loglevel):
 @debug_params
 def merge_single(*args, **kwargs):
     """
-    Merge count.tsv and stats.json output files from single-guide sub-command.
+    Merge count.tsv and stats.json output files from single-guide/long-read sub-commands.
     """
     merge.merge_single(*args, **kwargs)
+
+
+@cli.command()
+@click.option(
+    "-o",
+    "--output",
+    required=True,
+    type=click.Path(exists=False, file_okay=True, resolve_path=True),
+    help=HELP_OUTPUT,
+)
+@click.option(
+    "--inputs",
+    "-i",
+    multiple=True,
+    required=True,
+    help="Count file output from dual-guide, expects co-located stats.json",
+)
+@click.option(
+    "-c",
+    "--checksum",
+    required=False,
+    default="md5",
+    show_default=True,
+    type=click.Choice(["md5", "sha256"], case_sensitive=False),
+    help="Specify type of checksum used",
+)
+@debug_params
+def merge_dual(*args, **kwargs):
+    """
+    Merge count.tsv and stats.json output files from dual-guide sub-command.
+    """
+    merge.merge_dual(*args, **kwargs)

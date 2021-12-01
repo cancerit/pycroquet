@@ -182,7 +182,7 @@ def output_merged(output: str, sample: str, merged_data: List[List[Any]], header
         for hl in header_lines:
             sample_idx += 1
             print(hl, file=ofh)
-            new_cols.append(f"#{sample_idx}")
+            new_cols.append(str(sample_idx))
         print("\t".join(new_cols), file=ofh)
         for row in merged_data:
             # @todo - need to assess 15/30/custom low guide counts
@@ -213,3 +213,7 @@ def merge_single(output: str, inputs: List[str], checksum: str, loglevel: str):
     merged_stats = merge_single_stats(inputs)
     (sample, merged_data, header_lines) = merge_single_data(inputs, checksum)
     output_merged(output, sample, merged_data, header_lines, merged_stats)
+
+
+def merge_dual(output: str, inputs: List[str], checksum: str, loglevel: str):
+    pass
