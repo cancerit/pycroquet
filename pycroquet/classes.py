@@ -198,7 +198,8 @@ class Stats:
 
     def as_json(self):
         # need to convert Stats child objects to simple dicts
-        self.merged_from = [vars(m_frm) for m_frm in self.merged_from]
+        if self.merged_from is not None:
+            self.merged_from = [vars(m_frm) for m_frm in self.merged_from]
         return json.dumps(self.__dict__, sort_keys=True, indent=2)
 
 
