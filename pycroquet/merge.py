@@ -143,7 +143,7 @@ def load_single_count(count_file: str, file_idx: int, chksum_type: str):
         line = i_fh.readline()
     i_fh.close()
 
-    return (merge_header_line(cmd, version, file_idx, chk_item), sample, data_set)
+    return (merge_header_line(cmd, version, file_idx, chk_item), sample, data_set, chk_item)
 
 
 def merge_count_data(inputs: List[str], chksum_type: str):
@@ -151,9 +151,16 @@ def merge_count_data(inputs: List[str], chksum_type: str):
     exp_sample = None
     header_lines = []
     final_data = None
+    chksum_seen = []
     for input in inputs:
         input_idx += 1
-        (header_line, sample, input_set) = load_single_count(input, input_idx, chksum_type)
+        (header_line, sample, input_set, chksum) = load_single_count(input, input_idx, chksum_type)
+        if chksum in chksum_seen:
+            logging.critical(
+                f"Input file {input_idx} ({input}) is the same as a previous file based on the computed checksum."
+            )
+            sys.exit(2)
+        chksum_seen.append(chksum)
         header_lines.append(header_line)
         if exp_sample is None:
             exp_sample = sample
