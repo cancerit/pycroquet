@@ -49,8 +49,12 @@ from pycroquet import cli
 from pycroquet import libparser
 from pycroquet import readparser
 from pycroquet.classes import Classification
+from pycroquet.classes import Guide
 from pycroquet.classes import Library
 from pycroquet.classes import Stats
+from pycroquet.constants import COLS_REQ
+from pycroquet.countwriter import _fmt_counts
+from pycroquet.countwriter import _header
 from pycroquet.htscomm import hts_sort_n_index
 from pycroquet.main import map_reads
 from pycroquet.main import sg_select_alignment
@@ -472,6 +476,24 @@ def pickles_to_mapset(pickles: List[str], reads: Dict[str, int], aligner: Aligne
     return (aligned_results, multi_map, unique_map, unmap)
 
 
+def mark_uniq_guides(library: Library):
+    """
+    first instance is considered unique, remaining are not
+    """
+    guides = library.guides
+    seen = {}
+    total_dups = 0
+    f_val = 1
+    for g in guides:
+        sgrna_seqs = g.composite_sgrna_seq()
+        if sgrna_seqs in seen:
+            g.unique = False
+            total_dups += 1
+        else:
+            seen[sgrna_seqs] = f_val
+    logging.info(f"Number of duplicate guide-pairs: {total_dups}")
+
+
 def run(
     guidelib,
     queries,
@@ -494,6 +516,7 @@ def run(
         loglevel, cpus, workspace, output, boundary_mode
     )
     library = libparser.load(guidelib)
+    mark_uniq_guides(library)
     # returning a list of all guides in a single list
     # this allows us to map reads to both orientations at the same time (set reverse_comp)
 
@@ -501,7 +524,7 @@ def run(
     # input data has to be samtools-collated if hts
     seq_file = readparser.collate(queries, workspace, usable_cpu)
     # read loading needs to return both the unique list of read sequences, and the unique pairs (r1|r2)
-    (unique, stats, reads, read_pairs) = readparser.parse_reads(
+    (unique, stats, reads, _) = readparser.parse_reads(
         seq_file,
         sample=sample,
         cpus=usable_cpu,
@@ -554,10 +577,10 @@ def run(
     with gzip.open(count_output, "wt") as cout:
         print("##Command: " + stats.command, file=cout)
         print("##Version: " + stats.version, file=cout)
-        print("#" + "\t".join(["id", stats.sample_name]), file=cout)
+        print(_header(stats.sample_name, inc_unique=True), file=cout)
 
         for g in library.guides:
-            print(f"{g.id}\t{g.count}", file=cout)
+            print(_fmt_counts(g, inc_unique=True), file=cout)
             if g.count == 0:
                 stats.zero_count_guides += 1
             if g.count < 15:
