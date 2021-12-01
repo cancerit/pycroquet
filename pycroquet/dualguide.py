@@ -481,7 +481,7 @@ def mark_uniq_guides(library: Library):
     first instance is considered unique, remaining are not
     """
     guides = library.guides
-    seen = {}
+    seen = []
     total_dups = 0
     f_val = 1
     for g in guides:
@@ -489,8 +489,7 @@ def mark_uniq_guides(library: Library):
         if sgrna_seqs in seen:
             g.unique = False
             total_dups += 1
-        else:
-            seen[sgrna_seqs] = f_val
+        seen.append(sgrna_seqs)
     logging.info(f"Number of duplicate guide-pairs: {total_dups}")
 
 
