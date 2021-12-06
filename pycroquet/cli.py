@@ -292,8 +292,8 @@ def dual_guide(*args, **kwargs):
 @debug_params
 def long_read(*args, **kwargs):
     """
-    Map read file to library guides and output counts, statistics and alignments files.
-    Different to single-guide due to read filtering and other defaults
+    Map read file to library guides and output counts, statistics and alignments files. Minimal assessment of unique
+    reads only via --unique option.
     """
     pysge.run(*args, **kwargs)
 
