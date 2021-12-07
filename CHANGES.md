@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.5.0
+
+- Dual-guide count output is now same as single-guide
+- All count output files are compressed with gzip
+- Merging of count and statistics files implemented
+
 ## 1.4.1
 
 Use classifications in the `*.query_class.tsv.gz` file.

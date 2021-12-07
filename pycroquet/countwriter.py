@@ -38,12 +38,10 @@ from typing import Tuple
 from pycroquet.classes import Guide
 from pycroquet.classes import Library
 from pycroquet.classes import Stats
-
-# these are all in the root of guide object
-COLS_REQ = ["id", "sgrna_ids", "sgrna_seqs", "gene_pair_id"]
+from pycroquet.constants import COLS_REQ
 
 
-def _fmt_single(guide: Guide, count: int) -> str:
+def _fmt_counts(guide: Guide, inc_unique: bool = True) -> str:
     to_join = []
     for c in COLS_REQ:
         attr = getattr(guide, c)
@@ -51,16 +49,19 @@ def _fmt_single(guide: Guide, count: int) -> str:
             attr = "|".join(attr)
         to_join.append(attr)
 
-    to_join.append(str(int(guide.unique)))  # better for the output
-    to_join.append(str(count))
+    if inc_unique:
+        to_join.append(str(int(guide.unique)))  # better for the output
+
+    to_join.append(str(guide.count))
     return "\t".join(to_join)
 
 
-def _header(sample: str) -> str:
+def _header(sample: str, inc_unique: bool = True) -> str:
     header = "#"
     for c in COLS_REQ:
         header += f"{c}\t"
-    header += "unique_guide\t"
+    if inc_unique:
+        header += "unique_guide\t"
     header += f"reads_{sample}"
     return header
 
@@ -77,11 +78,11 @@ def guide_counts_single(
     """
     if low_count is True:
         stats.low_count_guides_user = {"lt": low_count, "count": 0}
-    count_output = f"{output}.counts.tsv"
+    count_output = f"{output}.counts.tsv.gz"
     logging.info(f"Writing counts file: {count_output}")
     count_total = 0
     # target_to_guides = library.target_to_guides  # can't remember why I included this
-    with open(count_output, "wt") as cout:
+    with gzip.open(count_output, "wt") as cout:
         print("##Command: " + stats.command, file=cout)
         print("##Version: " + stats.version, file=cout)
         print(_header(stats.sample_name), file=cout)
@@ -98,7 +99,8 @@ def guide_counts_single(
                     stats.zero_count_guides += 1
             if low_count is True and count < low_count:
                 stats.low_count_guides_user["count"] += 1
-            print(_fmt_single(guide, count), file=cout)
+            guide.count = count
+            print(_fmt_counts(guide), file=cout)
             count_total += count
 
     stats.mean_count_per_guide = round(count_total / len(library.guides), 2)
@@ -106,7 +108,7 @@ def guide_counts_single(
     stats_output = f"{output}.stats.json"
     logging.info(f"Writing statistics file: {stats_output}")
     with open(stats_output, "wt") as jout:
-        print(json.dumps(stats.__dict__, sort_keys=True, indent=2), file=jout)
+        print(stats.as_json(), file=jout)
     return (count_output, count_total)
 
 

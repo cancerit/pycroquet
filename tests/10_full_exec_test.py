@@ -34,6 +34,7 @@ from pprint import pprint
 
 import pytest
 
+from pycroquet import dualguide
 from pycroquet import singleguide
 
 DATA_DIR = os.path.join(
@@ -112,3 +113,78 @@ def test_01_single_guide(queries, sample, rules, qual_offset, no_alignment, stat
 
     for k in ("mapped_to_guide_reads", "total_guides", "total_reads", "unmapped_reads"):
         assert stats_new[k] == stats_old[k], k
+
+
+"""
+pycroquet dual-guide -g tests/data/cli/input/dual_lib.tsv -q tests/data/cli/input/dual_reads.bam -o tests/data/cli/output/dual_nolow -b exact -w work
+pycroquet dual-guide -g tests/data/cli/input/dual_lib.tsv -q tests/data/cli/input/dual_reads.bam -o tests/data/cli/output/dual_low_count -b exact -w work --low_count 5
+"""
+
+
+@pytest.mark.parametrize(
+    "low_count, compare_to",
+    [
+        (None, "dual_nolow"),
+        (5, "dual_low_count"),
+    ],
+)
+def test_02_dual_guide(low_count, compare_to):
+    guidelib = os.path.join(DATA_DIR, "input", "dual_lib.tsv.gz")
+    queries = os.path.join(DATA_DIR, "input", "dual_reads.bam")
+    sample = None
+    rules = []
+    # low_count = None
+    minscore = 15
+    qual_offset = None
+    cpus = 1
+    reference = None
+    excludeqcf = False
+    boundary_mode = "TinQ"
+    trimseq = 0
+    chunks = 1000
+    loglevel = "WARN"
+
+    stats_new = None
+
+    with tempfile.TemporaryDirectory() as tdir:
+        output = os.path.join(tdir, "result")
+        workspace = os.path.join(tdir, "workspace")
+        dualguide.run(
+            guidelib,
+            queries,
+            sample,
+            output,
+            workspace,
+            rules,
+            low_count,
+            minscore,
+            qual_offset,
+            cpus,
+            reference,
+            excludeqcf,
+            boundary_mode,
+            trimseq,
+            chunks,
+            loglevel,
+        )
+        out_counts = f"{output}.counts.tsv.gz"
+        out_stats = f"{output}.stats.json"
+        out_cram = f"{output}.cram"
+        out_crai = f"{output}.cram.crai"
+
+        assert os.path.exists(out_counts)
+        assert os.path.exists(out_stats)
+        assert os.path.exists(out_cram)
+        assert os.path.exists(out_crai)
+
+        with open(out_stats, "r") as sfp:
+            stats_new = json.load(sfp)
+
+    stats_old = None
+    with open(os.path.join(DATA_DIR, "output", f"{compare_to}.stats.json"), "r") as sfp:
+        stats_old = json.load(sfp)
+
+    for i in ("command", "version"):
+        del stats_old[i]
+        del stats_new[i]
+    assert stats_new == stats_old

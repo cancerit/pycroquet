@@ -1,0 +1,21 @@
+{
+  "command": "pycroquet single-guide -g tests/data/cli/input/guides.tsv.gz -q tests/data/cli/input/mini.fq.gz -o tests/data/cli/output/bob_2 -s BOB",
+  "length_excluded_reads": null,
+  "low_count_guides_lt_15": 101064,
+  "low_count_guides_lt_30": 101064,
+  "low_count_guides_user": null,
+  "mapped_to_guide_reads": 195,
+  "mean_count_per_guide": 0.0,
+  "merged_from": null,
+  "multimap_reads": 0,
+  "pair_classifications": null,
+  "reversed_reads": false,
+  "sample_name": "BOB",
+  "total_guides": 101064,
+  "total_pairs": 0,
+  "total_reads": 200,
+  "unmapped_reads": 5,
+  "vendor_failed_reads": 0,
+  "version": "1.3.0",
+  "zero_count_guides": 100869
+}
