@@ -1,6 +1,6 @@
 # CHANGES
 
-## NEXT
+## 1.5.0
 
 - Dual-guide count output is now same as single-guide
 - All count output files are compressed with gzip
