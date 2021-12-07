@@ -27,6 +27,7 @@
 # statement that reads ‘Copyright (c) 2005-2012’ should be interpreted as being
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
+import gzip
 import os
 import tempfile
 
@@ -52,5 +53,5 @@ def test_01_countwriter_guide_counts_single(guide_set, stats, exp_count, info):
     with tempfile.TemporaryDirectory() as tdir:
         stub = os.path.join(tdir, "result.tsv")
         (output, total_count) = countwriter.guide_counts_single(library, guide_set, stub, stats=stats)
-        assert len(open(output).readlines()) == 4, info  # cmd, version, header, result
+        assert len(gzip.open(output, "rt").readlines()) == 4, info  # cmd, version, header, result
         assert total_count == exp_count, info

@@ -37,3 +37,6 @@ EXT_TO_HTS: Final = {
     ".cram": "rc",
     ".sam": "r",
 }
+
+# these are all in the root of guide object
+COLS_REQ = ["id", "sgrna_ids", "sgrna_seqs", "gene_pair_id"]
