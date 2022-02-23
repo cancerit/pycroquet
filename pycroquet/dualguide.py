@@ -546,7 +546,7 @@ def run(
     Need to convert alignment batches into a dict by sequence, containing the possible mappings
     """
     (aligned_results, multi_map, unique_map, unmap) = pickles_to_mapset(pickles, reads, aligner)
-    logging.info(f"Unique: {unique_map}, Multimap: {multi_map}, Unmapped, {unmap}")
+    logging.info(f"Unique: {unique_map}, Multimap: {multi_map}, Unmapped: {unmap}")
     # * generate the fasta for the guides in workspace
     (guide_fa, header, ref_ids, default_rgid) = guide_header(workspace, library, stats, seq_file)
 
