@@ -322,7 +322,11 @@ def read_pairs_to_guides(
                 raise ValueError("Collated BAM exhausted between records")
 
             (read_l, read_r) = (seqread_l.sequence, seqread_r.sequence)
-            pair_lookup = f"{read_l}|{read_r}"
+
+            if library.header.reverse_read_order:
+                pair_lookup = f"{read_r}|{read_l}"
+            else:
+                pair_lookup = f"{read_l}|{read_r}"
 
             a_l, a_r = None, None
 
@@ -579,7 +583,7 @@ def run(
         print(_header(stats.sample_name, inc_unique=True), file=cout)
 
         for g in library.guides:
-            print(_fmt_counts(g, inc_unique=True), file=cout)
+            print(_fmt_counts(g, inc_unique=True, reverse_sgrna_seqs=library.header.reverse_read_order), file=cout)
             if g.count == 0:
                 stats.zero_count_guides += 1
             if g.count < 15:
