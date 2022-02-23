@@ -206,7 +206,9 @@ def parse_data_rows(lh: LibraryHeader, ifh: TextIO) -> List[Guide]:
         else:
             if logged_sgrna_strands is False:
                 logging.warning("'sgrna_strands' is not implemented beyond validation vs header item 'library-type'")
-                # Changes are required in dualguide.classify_read_pair() to support this functionality.
+                logging.warning(
+                    "\tChanges are required to support this functionality, see: https://github.com/cancerit/pycroquet/issues/13"
+                )
                 logged_sgrna_strands = True
             this_no = len(guide.sgrna_strands)
             if strand_no is None:
