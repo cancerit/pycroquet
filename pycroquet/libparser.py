@@ -28,6 +28,7 @@
 # identical to a statement that reads ‘Copyright (c) 2005, 2006, 2007, 2008,
 # 2009, 2010, 2011, 2012’.
 import gzip
+import logging
 import re
 from typing import Dict
 from typing import List
@@ -178,6 +179,7 @@ def parse_data_rows(lh: LibraryHeader, ifh: TextIO) -> List[Guide]:
     guides = []
 
     cols_to_split = lh.column_separators
+    logged_sgrna_strands = False
 
     while True:
         line = ifh.readline()
@@ -202,6 +204,10 @@ def parse_data_rows(lh: LibraryHeader, ifh: TextIO) -> List[Guide]:
         if guide.sgrna_strands is None:
             guide.sgrna_strands = strand_set
         else:
+            if logged_sgrna_strands is False:
+                logging.warning("'sgrna_strands' is not implemented beyond validation vs header item 'library-type'")
+                # Changes are required in dualguide.classify_read_pair() to support this functionality.
+                logged_sgrna_strands = True
             this_no = len(guide.sgrna_strands)
             if strand_no is None:
                 strand_no = this_no
