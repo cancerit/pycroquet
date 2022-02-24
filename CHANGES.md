@@ -1,5 +1,10 @@
 # CHANGES
 
+## 1.5.1
+
+- Improve outputs when `R2_R1` has been applied to ensure input fields are replicated "as is" in counts file
+- Add warning to indicate `sgrna_strands` is minimally implemented within the manifest and not applied in the processing (see #13)
+
 ## 1.5.0
 
 - Dual-guide count output is now same as single-guide

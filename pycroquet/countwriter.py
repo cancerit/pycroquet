@@ -41,12 +41,15 @@ from pycroquet.classes import Stats
 from pycroquet.constants import COLS_REQ
 
 
-def _fmt_counts(guide: Guide, inc_unique: bool = True) -> str:
+def _fmt_counts(guide: Guide, inc_unique: bool = True, reverse_sgrna_seqs: bool = False) -> str:
     to_join = []
     for c in COLS_REQ:
         attr = getattr(guide, c)
         if type(attr) is list:
-            attr = "|".join(attr)
+            if c == "sgrna_seqs" and reverse_sgrna_seqs:
+                attr = "|".join(reversed(attr))
+            else:
+                attr = "|".join(attr)
         to_join.append(attr)
 
     if inc_unique:
