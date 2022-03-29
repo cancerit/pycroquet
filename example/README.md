@@ -1,6 +1,6 @@
 # Quantification of a combinatorial CRISPR screen using pyCROQUET
 
-The python Crispr Read to Oligo QUantification and Evaluation Tool or **pyCROQUET** command line application can be used to quanitfy guide abundance for single- and dual-guide CRISPR screens.
+The python Crispr Read to Oligo QUantification and Evaluation Tool or **pyCROQUET** command line application can be used to quantify guide abundance for single- and dual-guide CRISPR screens.
 
 ## Software installation
 
