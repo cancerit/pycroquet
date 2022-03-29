@@ -23,7 +23,7 @@ The following paper contains experiments using several different libraries:
 >*Nat Biotechnol 38, 638–648 (2020).*   
 >https://doi.org/10.1038/s41587-020-0437-z
 
-For the purpose of this example, we used pyCROQUET to quantify the diagenic library which uses two guides to target paralogues. We selected this dataset as both the raw sequencing data (used for quantification) and raw counts (used for comparison) were available:
+For the purpose of this example, we used pyCROQUET to quantify the digenic library which uses two guides to target paralogues. We selected this dataset as both the raw sequencing data (used for quantification) and raw counts (used for comparison) were available:
 
 * **Raw counts and sample metadata** ([GEO series GSE144281](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE144281)) 
 * **Raw sequencing (FASTQ) and run metadata** ([SRA project PRJNA603290](https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA603290&o=acc_s%3Aa))
