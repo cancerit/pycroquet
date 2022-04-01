@@ -3,7 +3,7 @@ header:
     spdx-id: AGPL-3.0-or-later
     copyright-owner: Genome Research Ltd
     content: |
-      Copyright (c) 2021
+      Copyright (c) 2021-2022
 
       Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 
@@ -33,7 +33,7 @@ header:
       2009, 2010, 2011, 2012’.
 
     pattern: |
-      Copyright \(c\) \d+
+      Copyright \(c\) \d+.*
 
       Author: .+
 
@@ -80,5 +80,6 @@ header:
     - 'MANIFEST.in'
     - 'tests/htmlcov/'
     - '.eggs/'
+    - 'publication/'
 
   comment: on-failure
