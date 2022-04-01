@@ -1,5 +1,9 @@
 # CHANGES
 
+## 1.6.0
+
+Adds example data used in publication.
+
 ## 1.5.1
 
 - Improve outputs when `R2_R1` has been applied to ensure input fields are replicated "as is" in counts file

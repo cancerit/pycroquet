@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2021
+# Copyright (c) 2021-2022
 #
 # Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 #
@@ -38,7 +38,7 @@ config = {
     "author": "Keiran M Raine",
     "url": "https://github.com/cancerit/pycroquet",
     "author_email": "cgphelp@sanger.ac.uk",
-    "version": "1.5.1",
+    "version": "1.6.0",
     "license": "AGPL-3.0",
     "python_requires": ">= 3.9",
     "install_requires": ["click", "click-option-group", "python-magic", "pysam", "pygas", "PyYAML"],
