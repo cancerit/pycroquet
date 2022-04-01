@@ -80,5 +80,6 @@ header:
     - 'MANIFEST.in'
     - 'tests/htmlcov/'
     - '.eggs/'
+    - 'publication/'
 
   comment: on-failure
