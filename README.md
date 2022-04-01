@@ -398,7 +398,7 @@ If you need to make more extensive changes to the license carefully test the pat
 ## LICENSE
 
 ```
-Copyright (c) 2021
+Copyright (c) 2021-2022
 
 Author: CASM/Cancer IT <cgphelp@sanger.ac.uk>
 
