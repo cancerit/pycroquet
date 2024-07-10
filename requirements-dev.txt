@@ -15,3 +15,4 @@ pytest-cov==2.12.1
 python-magic==0.4.24
 PyYAML==5.4.1
 toml==0.10.2
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
