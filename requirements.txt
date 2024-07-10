@@ -5,3 +5,4 @@ pygas==1.0.4
 pysam==0.18.0
 python-magic==0.4.24
 PyYAML==5.4.1
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
